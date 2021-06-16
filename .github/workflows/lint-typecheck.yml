@@ -1,0 +1,22 @@
+name: Type check and lint TypeScript and Python code
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install python tools
+      run: pip install flake8 mypy
+    - name: Preapre Python code
+      run: pip install --extra-index-url https://pypi.fury.io/dharpa/ -e . 
+    - name: Check Python code
+      run: make lint
