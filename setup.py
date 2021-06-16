@@ -1,9 +1,10 @@
+from lumy_middleware import __version__
 import setuptools
 import os.path
 
 REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-__version__ = '0.2.1'
+
 description = 'Lumy Middleware'
 homepage = 'https://github.com/DHARPA-Project/lumy-middleware'
 author = 'DHARPA'
