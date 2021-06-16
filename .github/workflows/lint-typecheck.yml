@@ -20,5 +20,7 @@ jobs:
       run: pip install --extra-index-url https://pypi.fury.io/dharpa/ -e . 
     - name: Install mypy types
       run: mypy --install-types
-    - name: Check Python code
-      run: make lint
+    - name: Lint
+      run: flake8 .
+    - name: check types
+      run: mypy --cache-dir=/dev/null --no-incremental .
