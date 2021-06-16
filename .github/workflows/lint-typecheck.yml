@@ -19,7 +19,7 @@ jobs:
     - name: Preapre Python code
       run: pip install --extra-index-url https://pypi.fury.io/dharpa/ -e . 
     - name: Install mypy types
-      run: mypy --install-types
+      run: mypy --cache-dir=/dev/null --no-incremental --install-types
     - name: Lint
       run: flake8 .
     - name: check types
