@@ -24,3 +24,7 @@ Message classes are generated from JSON schema files using a [tool](https://gith
 ```shell
 yarn gen  -- --middleware-directory=../../lumy-middleware
 ```
+
+## Releases
+
+A new release is published to [Gemfury](https://fury.io) every time the repository is tagged with a `v*` tag, where `*` after `v` is a semver version, that should match the version declared in `lumy_middleware.__init__.py` file.

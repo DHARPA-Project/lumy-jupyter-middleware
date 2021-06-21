@@ -3,7 +3,7 @@ name: Type check and lint Python code
 on: [push]
 
 jobs:
-  build:
+  lint_and_typecheck:
     runs-on: ubuntu-latest
     strategy:
       matrix:

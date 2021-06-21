@@ -1,6 +1,6 @@
 # flake8: noqa
 from dataclasses import dataclass
-from typing import Optional, List, Any, Dict, Union
+from typing import Optional, List, Dict, Any, Union
 from enum import Enum
 
 
@@ -38,6 +38,16 @@ class MsgExecutionState:
 
 
 @dataclass
+class MsgGetSystemInfo:
+    """Target: "activity"
+    Message type: "GetSystemInfo"
+    
+    Get System information
+    """
+    fields: Optional[List[str]] = None
+
+
+@dataclass
 class MsgProgress:
     """Target: "activity"
     Message type: "Progress"
@@ -46,6 +56,17 @@ class MsgProgress:
     """
     """Progress in percents."""
     progress: float
+
+
+@dataclass
+class MsgSystemInfo:
+    """Target: "activity"
+    Message type: "SystemInfo"
+    
+    System information
+    """
+    """Versions of backend components."""
+    versions: Dict[str, Any]
 
 
 @dataclass
