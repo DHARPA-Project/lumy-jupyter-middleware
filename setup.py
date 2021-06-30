@@ -29,8 +29,8 @@ setup_args = dict(
         'stringcase>=1.2.0',
         'dataclasses-json>=0.5.2',
         'pyyaml',
-        'kiara[all]==0.0.2',
-        'kiara_modules.core==0.0.2',
+        'kiara[all]==0.0.4',
+        'kiara_modules.core==0.0.3',
         'pandas>=1.2.4',
         'appdirs>=1.4.4'
     ],
