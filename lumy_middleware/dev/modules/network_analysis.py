@@ -31,7 +31,8 @@ def build_table_from_mapping(
     def get_data_item_for_column_mapping(column_mapping):
         data_item = cast(pa.Table, MockDataRegistry
                          .get_instance()
-                         .get_file_content(column_mapping['id']))
+                         .get_item_value(column_mapping['id'])
+                         .get_value_data())
         data_item_df = data_item.to_pandas()
         if column_mapping['column'] not in data_item_df:
             return None

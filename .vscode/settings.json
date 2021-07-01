@@ -11,7 +11,10 @@
   "python.pythonPath": ".venv/bin/python",
   "python.venvPath": ".venv",
   "python.linting.pylintPath": ".venv/bin/pylint",
-  "python.linting.pylintArgs": ["--errors-only", "--generated-members=numpy.* ,torch.* ,cv2.* , cv.*"],
+  "python.linting.pylintArgs": [
+    "--errors-only",
+    "--generated-members=numpy.* ,torch.* ,cv2.* , cv.*"
+  ],
   "python.linting.pylintEnabled": true,
   "python.linting.pylintUseMinimalCheckers": true,
   "python.linting.flake8Enabled": true,
