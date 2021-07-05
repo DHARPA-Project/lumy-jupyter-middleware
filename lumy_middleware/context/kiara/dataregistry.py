@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Callable, Iterable, Optional, Type, cast
 
 from lumy_middleware.context.dataregistry import (Batch, DataRegistry,
@@ -6,6 +7,8 @@ from lumy_middleware.context.dataregistry import (Batch, DataRegistry,
 
 from kiara import Kiara
 from kiara.data import Value
+
+logger = logging.getLogger(__name__)
 
 FilterFn = Callable[[str, QueryOperator, Kiara], bool]
 
@@ -50,13 +53,20 @@ FiltersMap: dict[str, dict[Type[QueryOperator], FilterFn]] = {
 }
 
 
+def get_value_label(value: Value) -> str:
+    '''
+    TODO: This is a workaround to get value label which is not supported
+    by kiara at the moment. This will go away once there is a particular
+    metadata field for it.
+    '''
+    return value.get_metadata('value').get('value', {}).get('origin', value.id)
+
+
 def as_item(id: str, kiara: Kiara) -> DataRegistryItem:
     value = kiara.data_registry.get_value_item(id)
     return DataRegistryItem(
         id=value.id,
-        # TODO: use label metadata field value when
-        # it is available in Kiara
-        label=value.id,
+        label=get_value_label(value),
         type=value.type_name,
         metadata=cast(dict[str, Any], value.get_metadata())
     )

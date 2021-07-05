@@ -4,6 +4,7 @@ from typing import Mapping
 import pyarrow as pa
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
+from lumy_middleware.context.kiara.dataregistry import get_value_label
 from lumy_middleware.jupyter.controller import IpythonKernelController
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class DataSelectionModule(KiaraModule):
         selected_items = [
             {
                 'id': id,
-                'label': id,
+                'label': get_value_label(registry.get_item_value(id)),
                 'type': registry.get_item_value(id).type_name,
                 'columnNames': registry.get_item_value(id)
                 .get_metadata('table')['table']['column_names'],
