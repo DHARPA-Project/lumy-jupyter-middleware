@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from lumy_middleware.context.dataregistry import DataRegistry
 from lumy_middleware.types import State, Workflow
 from lumy_middleware.types.generated import DataTabularDataFilter
 from tinypubsub.simple import SimplePublisher
@@ -143,3 +144,11 @@ class AppContext(ABC):
         Fired when processing state is changed.
         '''
         return self._event_processing_state_changed
+
+    @property
+    @abstractmethod
+    def data_registry(self) -> DataRegistry:
+        '''
+        Returns data registry.
+        '''
+        ...

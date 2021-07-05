@@ -3,7 +3,6 @@ from typing import Any, cast
 
 import pyarrow as pa
 from lumy_middleware.context.dataregistry import DataRegistryItem, IsIn
-from lumy_middleware.dev.data_registry.mock import MockDataRegistry
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types.generated import (MsgDataRepositoryFindItems,
                                              MsgDataRepositoryItems,
@@ -12,6 +11,19 @@ from lumy_middleware.utils.codec import serialize
 from lumy_middleware.utils.dataclasses import to_dict
 
 logger = logging.getLogger(__name__)
+
+
+def get_column_names(metadata: dict[str, Any]) -> list[str]:
+    return metadata.get('table', {}).get('column_names', [])
+
+
+def get_column_types(metadata: dict[str, Any]) -> list[str]:
+    columns = get_column_names(metadata)
+    schema = metadata.get('table', {}).get('schema', {})
+    return [
+        schema.get(c, {}).get('arrow_type_name', 'unknown')
+        for c in columns
+    ]
 
 
 def as_table(items: list[DataRegistryItem]) -> pa.Table:
@@ -24,19 +36,21 @@ def as_table(items: list[DataRegistryItem]) -> pa.Table:
         'id': [i.id for i in items],
         'label': [i.label for i in items],
         'type': [i.type for i in items],
-        'columnNames': [i.metadata.get('columnNames', []) for i in items],
-        'columnTypes': [i.metadata.get('columnTypes', []) for i in items],
+        'columnNames': [get_column_names(i.metadata) for i in items],
+        'columnTypes': [get_column_types(i.metadata) for i in items],
     })
 
 
 class DataRepositoryHandler(MessageHandler):
     def _handle_FindItems(self, msg: MsgDataRepositoryFindItems):
-        registry = MockDataRegistry.get_instance()
+        self.context.data_registry
 
         if msg.filter.types is not None and len(msg.filter.types) > 0:
-            batch = registry.find(type=IsIn(msg.filter.types))
+            batch = self.context.data_registry.find(
+                type=IsIn(msg.filter.types)
+            )
         else:
-            batch = registry.find()
+            batch = self.context.data_registry.find()
 
         offset = msg.filter.offset or 0
         page_size = msg.filter.page_size or 5

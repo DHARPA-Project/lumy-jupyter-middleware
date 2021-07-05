@@ -109,5 +109,8 @@ class DataRegistry(Generic[VT], ABC):
         ...
 
     @abstractmethod
-    def get_item_value(self, item_id: str, filter: Any = None) -> VT:
+    def get_item_value(self, item_id: str) -> VT:
+        '''
+        Return the value by ID.
+        '''
         ...

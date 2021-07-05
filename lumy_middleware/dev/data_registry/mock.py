@@ -28,15 +28,23 @@ def file_is_tabular(f: Path):
 def to_item(f: Path):
     is_tabular = file_is_tabular(f)
     columns = pd.read_csv(str(f)).columns.tolist(
-    ) if file_is_tabular(f) else None
+    ) if file_is_tabular(f) else []
 
     return {
         'id': str(uuid4()),
         'label': f.name,
         'type': 'table' if is_tabular else 'string',
-        'columnNames': columns,
-        'columnTypes': ['string' for _ in columns]
-        if is_tabular else None
+        'metadata': {
+            'table': {
+                'metadata': {
+                    'column_names': columns,
+                    'schema': {
+                        c: {'arrow_type_name': 'string'}
+                        for c in columns
+                    }
+                }
+            }
+        }
     }
 
 
@@ -136,10 +144,8 @@ class MockDataRegistry(DataRegistry[MockValue]):
         self._file_lookup = {i['id']: p for i, p in items}
 
         self._items = [
-            DataRegistryItem(item['id'], item['label'], item['type'], {
-                'columnNames': item['columnNames'],
-                'columnTypes': item['columnTypes']
-            })
+            DataRegistryItem(item['id'], item['label'],
+                             item['type'], item['metadata'])
             for item, _ in items
         ]
 
@@ -164,9 +170,7 @@ class MockDataRegistry(DataRegistry[MockValue]):
             filtered_items = [i for i in filtered_items if filter_fn(i, v)]
         return MockBatch(filtered_items)
 
-    def get_item_value(self, item_id: str, filter: Any = None) -> MockValue:
-        assert filter is None, 'Filtering not implemented yet'
-
+    def get_item_value(self, item_id: str) -> MockValue:
         file_path = self._file_lookup[item_id]
         is_tabular = file_is_tabular(file_path)
         if is_tabular:
@@ -176,10 +180,12 @@ class MockDataRegistry(DataRegistry[MockValue]):
             data_type = 'table'
             metadata = {
                 'table': {
-                    'column_names': df.columns.to_list(),
-                    'schema': {
-                        k: {'arrow_type_name': str(v)}
-                        for k, v in df.dtypes.to_dict().items()
+                    'metadata': {
+                        'column_names': df.columns.to_list(),
+                        'schema': {
+                            k: {'arrow_type_name': str(v)}
+                            for k, v in df.dtypes.to_dict().items()
+                        }
                     }
                 }
             }

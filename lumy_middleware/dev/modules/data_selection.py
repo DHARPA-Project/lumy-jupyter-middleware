@@ -1,10 +1,10 @@
 import logging
 from typing import Mapping
-import pyarrow as pa
 
+import pyarrow as pa
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
-from lumy_middleware.dev.data_registry.mock import MockDataRegistry
+from lumy_middleware.jupyter.controller import IpythonKernelController
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,10 @@ class DataSelectionModule(KiaraModule):
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
         selected_items_ids = inputs.get_value_data(
             'selectedItemsIds') or []
-        registry = MockDataRegistry.get_instance()
+        # TODO: This will go away when workflow is refactored.
+        # registry should not be accessible from modules code.
+        registry = IpythonKernelController.get_instance() \
+            ._context.data_registry
         fields = ['id', 'label', 'type', 'columnNames', 'columnTypes']
         selected_items = [
             {
@@ -40,11 +43,11 @@ class DataSelectionModule(KiaraModule):
                 'label': id,
                 'type': registry.get_item_value(id).type_name,
                 'columnNames': registry.get_item_value(id)
-                .metadata['table']['column_names'],
+                .get_metadata('table')['table']['column_names'],
                 'columnTypes': [
                     v['arrow_type_name']
                     for v in registry.get_item_value(id)
-                    .metadata['table']['schema'].values()
+                    .get_metadata('table')['table']['schema'].values()
                 ]
             }
             for id in selected_items_ids

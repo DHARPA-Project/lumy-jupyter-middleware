@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
-from lumy_middleware.dev.data_registry.mock import MockDataRegistry
+from lumy_middleware.jupyter.controller import IpythonKernelController
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,11 @@ def build_table_from_mapping(
     table = pd.DataFrame()
 
     def get_data_item_for_column_mapping(column_mapping):
-        data_item = cast(pa.Table, MockDataRegistry
-                         .get_instance()
+        # TODO: This will go away when workflow is refactored.
+        # registry should not be accessible from modules code.
+        registry = IpythonKernelController.get_instance() \
+            ._context.data_registry
+        data_item = cast(pa.Table, registry
                          .get_item_value(column_mapping['id'])
                          .get_value_data())
         data_item_df = data_item.to_pandas()
