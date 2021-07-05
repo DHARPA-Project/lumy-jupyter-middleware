@@ -85,7 +85,10 @@ class KiaraAppContext(AppContext, BatchController):
         self._current_workflow.pipeline
 
         # TODO: executing workflow right away for dev purposes only
-        self.execute_all_steps()
+        try:
+            self.execute_all_steps()
+        except Exception:
+            logger.debug('Could not execute steps on launch. It is fine.')
 
     @property
     def current_workflow_structure(self) -> Optional[PipelineStructureDesc]:

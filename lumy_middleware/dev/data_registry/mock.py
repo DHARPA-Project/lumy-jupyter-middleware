@@ -96,12 +96,17 @@ FiltersMap: dict[str, dict[Type[QueryOperator], FilterFn]] = {
 class MockValue(Value):
     _data: Any = PrivateAttr()
 
-    def __init__(self, id: str, type: str, data: Any):
+    def __init__(self,
+                 id: str,
+                 type: str,
+                 data: Any,
+                 metadata: dict[str, dict[str, Any]] = {}):
         self._data = data
         super().__init__(
             id=id,
             value_schema=ValueSchema(type=type),
-            kiara=Kiara.instance()
+            kiara=Kiara.instance(),
+            metadata=metadata
         )
 
     def get_value_data(self) -> Any:
@@ -165,11 +170,22 @@ class MockDataRegistry(DataRegistry[MockValue]):
         file_path = self._file_lookup[item_id]
         is_tabular = file_is_tabular(file_path)
         if is_tabular:
-            data = pa.Table.from_pandas(pd.read_csv(file_path),
+            df = pd.read_csv(file_path)
+            data = pa.Table.from_pandas(df,
                                         preserve_index=False)
             data_type = 'table'
+            metadata = {
+                'table': {
+                    'column_names': df.columns.to_list(),
+                    'schema': {
+                        k: {'arrow_type_name': str(v)}
+                        for k, v in df.dtypes.to_dict().items()
+                    }
+                }
+            }
         else:
             with open(file_path, 'r') as f:
                 data = str(f.read())
             data_type = 'string'
-        return MockValue(item_id, type=data_type, data=data)
+            metadata = {}
+        return MockValue(item_id, type=data_type, data=data, metadata=metadata)
