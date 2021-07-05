@@ -1,7 +1,8 @@
 from typing import List, Optional
 
 import pyarrow.compute as pc
-from lumy_middleware.types.generated import (DataTabularDataFilterCondition,
+from lumy_middleware.types.generated import (DataTabularDataFilter,
+                                             DataTabularDataFilterCondition,
                                              DataTabularDataFilterItem,
                                              DataTabularDataSortingMethod,
                                              Direction)
@@ -67,3 +68,17 @@ def sort_table(
         sort_keys=[sort_opts]
     )
     return table.take(indices)
+
+
+def filter_table_with_pagination(
+    table: Table,
+    filter: Optional[DataTabularDataFilter]
+) -> Table:
+    if filter is None:
+        return table
+    if filter.full_value:
+        return table
+
+    filtered_table = filter_table(table, filter.condition)
+
+    return filtered_table.slice(filter.offset or 0, filter.page_size or 5)

@@ -2,10 +2,15 @@ import logging
 from typing import Any, cast
 
 import pyarrow as pa
+from kiara.data.values import Value
 from lumy_middleware.context.dataregistry import DataRegistryItem, IsIn
+from lumy_middleware.context.kiara.table_utils import \
+    filter_table_with_pagination
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types.generated import (MsgDataRepositoryFindItems,
+                                             MsgDataRepositoryGetItemValue,
                                              MsgDataRepositoryItems,
+                                             MsgDataRepositoryItemValue,
                                              TableStats)
 from lumy_middleware.utils.codec import serialize
 from lumy_middleware.utils.dataclasses import to_dict
@@ -65,3 +70,19 @@ class DataRepositoryHandler(MessageHandler):
             filter=msg.filter,
             items=serialized_filtered_items,
             stats=cast(Any, to_dict(stats)))
+
+    def _handle_GetItemValue(self, msg: MsgDataRepositoryGetItemValue):
+        value: Value = self.context.data_registry.get_item_value(msg.item_id)
+        # TODO: This will be updated when abstract filtering is implemented
+        # For now we just support original "table" values
+        if value.type_name == 'table':
+            table: pa.Table = value.get_value_data()
+            data = filter_table_with_pagination(table, msg.filter)
+
+            return MsgDataRepositoryItemValue(
+                item_id=msg.item_id,
+                type='table',
+                value=data,
+                filter=msg.filter,
+                metadata=cast(Any, to_dict(TableStats(rows_count=len(table))))
+            )

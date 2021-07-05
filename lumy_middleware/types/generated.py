@@ -104,46 +104,6 @@ class MsgDataRepositoryFindItems:
 
 
 @dataclass
-class MsgDataRepositoryItems:
-    """Target: "dataRepository"
-    Message type: "Items"
-    
-    Items from data repository.
-    """
-    filter: DataRepositoryItemsFilter
-    """Serialized table with items as rows."""
-    items: Any
-    """Stats of the data repository."""
-    stats: Dict[str, Any]
-
-
-@dataclass
-class MsgDataRepositorySubset:
-    """Target: "dataRepository"
-    Message type: "Subset"
-    
-    A subset of items
-    """
-    """Unique ID of the subset"""
-    id: str
-    """List of items IDs to add to the subset"""
-    items_ids: List[str]
-    """Label of the subset"""
-    label: str
-
-
-@dataclass
-class MsgModuleIOExecute:
-    """Target: "moduleIO"
-    Message type: "Execute"
-    
-    Run this step with the latest used parameters on all data (not preview only).
-    """
-    """Unique ID of the step within the workflow."""
-    id: str
-
-
-@dataclass
 class DataTabularDataFilterItem:
     """Filter condition item"""
     """Id of the column to filter"""
@@ -186,7 +146,14 @@ class DataTabularDataSortingMethod:
 
 @dataclass
 class DataTabularDataFilter:
-    """Filter for tabular data"""
+    """Filter applied to the value
+    TODO: This is tabular filter at the moment but will be changed to an abstract filter
+    which will depend on the data type.
+    
+    Filter for tabular data
+    
+    Filter applied to the value
+    """
     condition: Optional[DataTabularDataFilterCondition] = None
     """Whether to ignore other filter items and return full value."""
     full_value: Optional[bool] = None
@@ -195,6 +162,87 @@ class DataTabularDataFilter:
     """Size of the page"""
     page_size: Optional[int] = None
     sorting: Optional[DataTabularDataSortingMethod] = None
+
+
+@dataclass
+class MsgDataRepositoryGetItemValue:
+    """Target: "dataRepository"
+    Message type: "GetItemValue"
+    
+    Get value from data repository.
+    """
+    """Unique ID of the item."""
+    item_id: str
+    """Filter applied to the value
+    TODO: This is tabular filter at the moment but will be changed to an abstract filter
+    which will depend on the data type.
+    """
+    filter: Optional[DataTabularDataFilter] = None
+
+
+@dataclass
+class MsgDataRepositoryItemValue:
+    """Target: "dataRepository"
+    Message type: "ItemValue"
+    
+    Response to GetItemValue request.
+    Contains value and metadata.
+    """
+    """Unique ID of the item."""
+    item_id: str
+    """Type of the value"""
+    type: str
+    """Actual serialized value.
+    It may be a filtered value in case of a complex value.
+    Filter is also returned if the value is filtered.
+    """
+    value: Any
+    """Filter applied to the value"""
+    filter: Optional[DataTabularDataFilter] = None
+    """Metadata of the value if applicable. Simple types usually do not include it.
+    Complex ones like table do.
+    """
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class MsgDataRepositoryItems:
+    """Target: "dataRepository"
+    Message type: "Items"
+    
+    Items from data repository.
+    """
+    filter: DataRepositoryItemsFilter
+    """Serialized table with items as rows."""
+    items: Any
+    """Stats of the data repository."""
+    stats: Dict[str, Any]
+
+
+@dataclass
+class MsgDataRepositorySubset:
+    """Target: "dataRepository"
+    Message type: "Subset"
+    
+    A subset of items
+    """
+    """Unique ID of the subset"""
+    id: str
+    """List of items IDs to add to the subset"""
+    items_ids: List[str]
+    """Label of the subset"""
+    label: str
+
+
+@dataclass
+class MsgModuleIOExecute:
+    """Target: "moduleIO"
+    Message type: "Execute"
+    
+    Run this step with the latest used parameters on all data (not preview only).
+    """
+    """Unique ID of the step within the workflow."""
+    id: str
 
 
 @dataclass
