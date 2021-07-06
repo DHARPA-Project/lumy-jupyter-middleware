@@ -5,7 +5,6 @@ import pyarrow as pa
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
 from lumy_middleware.context.kiara.dataregistry import get_value_label
-from lumy_middleware.jupyter.controller import IpythonKernelController
 
 logger = logging.getLogger(__name__)
 
@@ -33,21 +32,30 @@ class DataSelectionModule(KiaraModule):
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
         selected_items_ids = inputs.get_value_data(
             'selectedItemsIds') or []
-        # TODO: This will go away when workflow is refactored.
-        # registry should not be accessible from modules code.
-        registry = IpythonKernelController.get_instance() \
-            ._context.data_registry
+
+        def get_value(id: str):
+            '''
+            TODO: This will go away when workflow is refactored.
+            registry should not be accessible from modules code.
+            '''
+            # NOTE: If using mock data registry - the commented
+            # code below should be used instead.
+            # registry = IpythonKernelController.get_instance() \
+            #     ._context.data_registry
+            # return registry.get_item_value(id)
+            return self._kiara.data_registry.get_value_item(id)
+
         fields = ['id', 'label', 'type', 'columnNames', 'columnTypes']
         selected_items = [
             {
                 'id': id,
-                'label': get_value_label(registry.get_item_value(id)),
-                'type': registry.get_item_value(id).type_name,
-                'columnNames': registry.get_item_value(id)
+                'label': get_value_label(get_value(id)),
+                'type': get_value(id).type_name,
+                'columnNames': get_value(id)
                 .get_metadata('table')['table']['column_names'],
                 'columnTypes': [
                     v['arrow_type_name']
-                    for v in registry.get_item_value(id)
+                    for v in get_value(id)
                     .get_metadata('table')['table']['schema'].values()
                 ]
             }
