@@ -527,6 +527,48 @@ class MsgParametersSnapshots:
 
 
 @dataclass
+class MsgWorkflowExecute:
+    """Target: "workflow"
+    Message type: "Execute"
+    
+    Execute a Kiara workflow.
+    """
+    """Name of the module or pipeline workflow to execute."""
+    module_name: str
+    """A unique ID representing this request. It's needed solely to correlate this request to
+    the response in pub/sub.
+    """
+    request_id: str
+    """Input values of the workflow."""
+    inputs: Optional[Dict[str, Any]] = None
+    """If true, the outputs of the workflow will be saved in the data repository."""
+    save: Optional[bool] = None
+    """ID of the workflow execution"""
+    workflow_id: Optional[str] = None
+
+
+class Status(Enum):
+    ERROR = "error"
+    OK = "ok"
+
+
+@dataclass
+class MsgWorkflowExecutionResult:
+    """Target: "workflow"
+    Message type: "ExecutionResult"
+    
+    Result of an execution of a Kiara workflow.
+    """
+    """A unique ID representing the execution request. Set in `Execute` message."""
+    request_id: str
+    status: Status
+    """Error message when status is 'error'."""
+    error_message: Optional[str] = None
+    """Result of the execution. Structure depends on the workflow. TBD."""
+    result: Optional[Dict[str, Any]] = None
+
+
+@dataclass
 class MsgWorkflowUpdated:
     """Target: "workflow"
     Message type: "Updated"
