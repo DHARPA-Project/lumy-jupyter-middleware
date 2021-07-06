@@ -5,9 +5,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+from kiara import Kiara
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
-from lumy_middleware.dev.data_registry.mock import MockDataRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -20,18 +20,30 @@ MappingItemStruct = pa.struct([
 ])
 
 
+def get_value_data(id: str, kiara: Kiara):
+    '''
+    TODO: This will go away when workflow is refactored.
+    registry should not be accessible from modules code.
+    '''
+    # NOTE: If using mock data registry - the commented
+    # code below should be used instead.
+    # registry = IpythonKernelController.get_instance() \
+    #     ._context.data_registry
+    # return registry.get_item_value(id)
+    return kiara.data_registry.get_value_item(id).get_value_data()
+
+
 def build_table_from_mapping(
     mapping_table: pa.Table,
-    column_names: List[str]
+    column_names: List[str],
+    kiara: Kiara
 ) -> pa.Table:
     mapping = mapping_table.to_pydict()
 
     table = pd.DataFrame()
 
     def get_data_item_for_column_mapping(column_mapping):
-        data_item = cast(pa.Table, MockDataRegistry
-                         .get_instance()
-                         .get_file_content(column_mapping['id']))
+        data_item = cast(pa.Table, get_value_data(column_mapping['id'], kiara))
         data_item_df = data_item.to_pandas()
         if column_mapping['column'] not in data_item_df:
             return None
@@ -100,7 +112,8 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
             'nodesMappingTable') or pa.Table.from_pydict({})
         nodes = build_table_from_mapping(
             nodes_mapping_table,
-            ['id', 'label', 'group']
+            ['id', 'label', 'group'],
+            self._kiara
         )
         outputs.set_value('nodes', nodes)
 
@@ -108,7 +121,8 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
             'edgesMappingTable') or pa.Table.from_pydict({})
         edges = build_table_from_mapping(
             edges_mapping_table,
-            ['srcId', 'tgtId', 'weight']
+            ['srcId', 'tgtId', 'weight'],
+            self._kiara
         )
         outputs.set_value('edges', edges)
 

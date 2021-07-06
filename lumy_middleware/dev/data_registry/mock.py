@@ -1,11 +1,18 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Type
 from uuid import uuid4
 
 import pandas as pd
 import pyarrow as pa
 from appdirs import user_data_dir
+from kiara import Kiara
+from kiara.data import Value
+from kiara.data.values import ValueSchema
+from lumy_middleware.context.dataregistry import (Batch, DataRegistry,
+                                                  DataRegistryItem, Eq, IsIn,
+                                                  QueryOperator, Substring)
+from pydantic import PrivateAttr
 
 APP_NAME = 'Lumy'
 
@@ -21,24 +28,109 @@ def file_is_tabular(f: Path):
 def to_item(f: Path):
     is_tabular = file_is_tabular(f)
     columns = pd.read_csv(str(f)).columns.tolist(
-    ) if file_is_tabular(f) else None
+    ) if file_is_tabular(f) else []
 
     return {
         'id': str(uuid4()),
-        'alias': f.name,
+        'label': f.name,
         'type': 'table' if is_tabular else 'string',
-        'columnNames': columns,
-        'columnTypes': ['string' for _ in columns]
-        if is_tabular else None
+        'metadata': {
+            'table': {
+                'metadata': {
+                    'column_names': columns,
+                    'schema': {
+                        c: {'arrow_type_name': 'string'}
+                        for c in columns
+                    }
+                }
+            }
+        }
     }
 
 
-class MockDataRegistry:
+class MockBatch(Batch):
+    items: list[DataRegistryItem]
+
+    def __init__(self, items: list[DataRegistryItem]):
+        self.items = items
+
+    def slice(self,
+              start: Optional[int] = None,
+              stop: Optional[int] = None) -> Iterable[DataRegistryItem]:
+        return iter(self.items[start:stop])
+
+    def __len__(self):
+        return len(self.items)
+
+
+FilterFn = Callable[[DataRegistryItem, QueryOperator], bool]
+
+
+def eq_fn(field: str):
+    def fn(item: DataRegistryItem, op: Eq):
+        return getattr(item, field) == op.value
+    return fn
+
+
+def isin_fn(field: str):
+    def fn(item: DataRegistryItem, op: IsIn):
+        return getattr(item, field) in op.values
+    return fn
+
+
+def substring_fn(field: str):
+    def fn(item: DataRegistryItem, op: Substring):
+        return op.term.lower() in getattr(item, field).lower()
+    return fn
+
+
+FiltersMap: dict[str, dict[Type[QueryOperator], FilterFn]] = {
+    'id': {
+        Eq: eq_fn('id'),
+        IsIn: isin_fn('id'),
+    },
+    'label': {
+        Eq: eq_fn('label'),
+        IsIn: isin_fn('label'),
+        Substring: substring_fn('label'),
+    },
+    'type': {
+        Eq: eq_fn('type'),
+        IsIn: isin_fn('type'),
+    }
+}
+
+
+class MockValue(Value):
+    _data: Any = PrivateAttr()
+
+    def __init__(self,
+                 id: str,
+                 type: str,
+                 data: Any,
+                 metadata: dict[str, dict[str, Any]] = {}):
+        self._data = data
+        super().__init__(
+            id=id,
+            value_schema=ValueSchema(type=type),
+            kiara=Kiara.instance(),
+            metadata=metadata
+        )
+
+    def get_value_data(self) -> Any:
+        return self._data
+
+    def get_value_hash(self) -> str:
+        return str(self.value_hash)
+
+
+class MockDataRegistry(DataRegistry[MockValue]):
     __instance = None
 
-    _data_items: pa.Table
     _files_path: Path
     _file_lookup: Dict[str, Path] = {}
+
+    _items: list[DataRegistryItem]
 
     def __init__(self, files_location=DefaultFilesPath):
         self._files_path = files_location
@@ -51,19 +143,11 @@ class MockDataRegistry:
 
         self._file_lookup = {i['id']: p for i, p in items}
 
-        self._data_items = pa.Table.from_pydict({
-            'id': [i['id'] for i, _ in items],
-            'alias': [i['alias'] for i, _ in items],
-            'type': [i['type'] for i, _ in items],
-            'columnNames': [i['columnNames'] for i, _ in items],
-            'columnTypes': [i['columnTypes'] for i, _ in items],
-        }, pa.schema({
-            'id': pa.utf8(),
-            'alias': pa.utf8(),
-            'type': pa.utf8(),
-            'columnNames': pa.list_(pa.utf8()),
-            'columnTypes': pa.list_(pa.utf8())
-        }))
+        self._items = [
+            DataRegistryItem(item['id'], item['label'],
+                             item['type'], item['metadata'])
+            for item, _ in items
+        ]
 
     @staticmethod
     def get_instance():
@@ -72,35 +156,42 @@ class MockDataRegistry:
 
         return MockDataRegistry.__instance
 
-    def get_items_by_ids(self, ids: List[str]) -> pa.Table:
-        items = self._data_items.to_pandas()
-        return pa.Table.from_pandas(items[items['id'].isin(ids)],
-                                    preserve_index=False)
+    def find(self, **kwargs) -> Batch:
+        filtered_items = self._items
 
-    def _get_filtered_table(self,
-                            types: Optional[List[str]] = None) -> pa.Table:
-        if types is None:
-            return self._data_items
-        items = self._data_items.to_pandas()
-        return pa.Table.from_pandas(items[items['type'].isin(types)],
-                                    preserve_index=False)
+        for k, v in kwargs.items():
+            filters = FiltersMap.get(k, None)
+            assert filters is not None, f'Field "{k}" is not supported'
+            if isinstance(v, str):
+                v = Eq(v)
+            filter_fn = filters[v.__class__]
+            assert filter_fn is not None, \
+                f'Operator {v.__class__} is not supported for field {k}'
+            filtered_items = [i for i in filtered_items if filter_fn(i, v)]
+        return MockBatch(filtered_items)
 
-    def filter_items(self,
-                     offset: int,
-                     page_size: int,
-                     types: Optional[List[str]] = None) -> pa.Table:
-        return self._get_filtered_table(types).slice(offset, page_size)
-
-    def get_total_items(self,
-                        types: Optional[List[str]] = None) -> int:
-        return self._get_filtered_table(types).num_rows
-
-    def get_file_content(self, file_id: str) -> Union[pa.Table, str]:
-        file_path = self._file_lookup[file_id]
+    def get_item_value(self, item_id: str) -> MockValue:
+        file_path = self._file_lookup[item_id]
         is_tabular = file_is_tabular(file_path)
         if is_tabular:
-            return pa.Table.from_pandas(pd.read_csv(file_path),
+            df = pd.read_csv(file_path)
+            data = pa.Table.from_pandas(df,
                                         preserve_index=False)
+            data_type = 'table'
+            metadata = {
+                'table': {
+                    'metadata': {
+                        'column_names': df.columns.to_list(),
+                        'schema': {
+                            k: {'arrow_type_name': str(v)}
+                            for k, v in df.dtypes.to_dict().items()
+                        }
+                    }
+                }
+            }
         else:
             with open(file_path, 'r') as f:
-                return str(f.read())
+                data = str(f.read())
+            data_type = 'string'
+            metadata = {}
+        return MockValue(item_id, type=data_type, data=data, metadata=metadata)

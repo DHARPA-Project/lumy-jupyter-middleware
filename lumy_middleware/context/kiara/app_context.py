@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 from lumy_middleware.context.context import AppContext, UpdatedIO
+from lumy_middleware.context.dataregistry import DataRegistry
+from lumy_middleware.context.kiara.dataregistry import KiaraDataRegistry
 from lumy_middleware.context.kiara.table_utils import filter_table, sort_table
 from lumy_middleware.types.generated import (DataTabularDataFilter, State,
                                              TableStats)
@@ -69,6 +71,7 @@ def get_pipeline_input_id(ids: List[str]) -> Optional[str]:
 
 class KiaraAppContext(AppContext, BatchController):
     _current_workflow: KiaraWorkflow
+    _data_registry: DataRegistry
 
     def load_workflow(self, workflow_file_or_name: Union[Path, str]) -> None:
         '''
@@ -79,13 +82,19 @@ class KiaraAppContext(AppContext, BatchController):
         self._current_workflow = kiara.create_workflow(
             str(workflow_file_or_name), controller=self)
 
+        self._data_registry = KiaraDataRegistry(kiara)
+        # self._data_registry = MockDataRegistry()
+
         # TODO: access the pipeline here because it is lazily created
         # in the getter. If not done, any code later accessing pipeline in
         # a different way will fail.
         self._current_workflow.pipeline
 
         # TODO: executing workflow right away for dev purposes only
-        self.execute_all_steps()
+        try:
+            self.execute_all_steps()
+        except Exception:
+            logger.debug('Could not execute steps on launch. It is fine.')
 
     @property
     def current_workflow_structure(self) -> Optional[PipelineStructureDesc]:
@@ -187,3 +196,7 @@ class KiaraAppContext(AppContext, BatchController):
         for step_id, output_ids in event.updated_step_outputs.items():
             msg = UpdatedIO(step_id=step_id, io_ids=output_ids)
             self.step_output_values_updated.publish(msg)
+
+    @property
+    def data_registry(self) -> DataRegistry:
+        return self._data_registry
