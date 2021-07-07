@@ -103,7 +103,10 @@ class KiaraDataRegistry(DataRegistry[Value]):
         TODO: Filtering implementation is not efficient at all.
         Waiting for better filtering support in Kiara.
         '''
-        ids = list(self._kiara.data_store.value_ids)
+        # ids = list(self._kiara.data_store.value_ids)
+        # TODO: Not sure if we should use value_ids or aliases.values
+        # kiara CLI uses aliases that excludes duplicates
+        ids = list(self._kiara.data_store.aliases.values())
 
         for k, v in kwargs.items():
             filters = FiltersMap.get(k, None)
