@@ -72,17 +72,17 @@ def get_pipeline_input_id(ids: List[str]) -> Optional[str]:
 class KiaraAppContext(AppContext, BatchController):
     _current_workflow: KiaraWorkflow
     _data_registry: DataRegistry
+    _kiara = Kiara.instance()
 
     def load_workflow(self, workflow_file_or_name: Union[Path, str]) -> None:
         '''
         AppContext
         '''
-        kiara: Kiara = Kiara.instance()
 
-        self._current_workflow = kiara.create_workflow(
+        self._current_workflow = self._kiara.create_workflow(
             str(workflow_file_or_name), controller=self)
 
-        self._data_registry = KiaraDataRegistry(kiara)
+        self._data_registry = KiaraDataRegistry(self._kiara)
         # self._data_registry = MockDataRegistry()
 
         # TODO: access the pipeline here because it is lazily created
