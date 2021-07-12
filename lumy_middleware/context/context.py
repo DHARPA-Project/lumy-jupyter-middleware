@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from lumy_middleware.context.dataregistry import DataRegistry
-from lumy_middleware.types import State, Workflow
+from lumy_middleware.types import State
 from lumy_middleware.types.generated import DataTabularDataFilter, LumyWorkflow
 from tinypubsub.simple import SimplePublisher
 
@@ -22,7 +22,7 @@ class AppContext(ABC):
     "kiara" and "mock".
     '''
 
-    _event_workflow_updated = SimplePublisher[Workflow]()
+    _event_workflow_updated = SimplePublisher[LumyWorkflow]()
     _event_step_input_values_updated = SimplePublisher[UpdatedIO]()
     _event_step_output_values_updated = SimplePublisher[UpdatedIO]()
     _event_processing_state_changed = SimplePublisher[State]()

@@ -100,7 +100,7 @@ def build_reverse_io_mappings(
 ) -> dict[str, ReverseIoMappings]:
     lookup: dict[str, ReverseIoMappings] = defaultdict(ReverseIoMappings)
 
-    for page in workflow.ui.pages:
+    for page in (workflow.ui.pages or []):
         mapping = page.mapping
         if mapping is not None:
             for m in (mapping.inputs or []):
@@ -150,7 +150,8 @@ class KiaraAppContext(AppContext, BatchController):
         # TODO: access the pipeline here because it is lazily created
         # in the getter. If not done, any code later accessing pipeline in
         # a different way will fail.
-        self._kiara_workflow.pipeline
+        if self._kiara_workflow:
+            self._kiara_workflow.pipeline
 
         self._workflow = workflow_path_or_content
         self._reverse_io_mappings = build_reverse_io_mappings(self._workflow)
@@ -177,6 +178,8 @@ class KiaraAppContext(AppContext, BatchController):
         workflow_step_id, workflow_input_id = \
             self._get_workflow_input_id_for_page(
                 step_id, input_id) or (None, None)
+        if workflow_step_id is None or workflow_input_id is None:
+            return (None, None)
 
         inputs = self.get_current_pipeline_state(
         ).step_inputs[workflow_step_id]
@@ -199,6 +202,8 @@ class KiaraAppContext(AppContext, BatchController):
         workflow_step_id, workflow_output_id = \
             self._get_workflow_output_id_for_page(
                 step_id, output_id) or (None, None)
+        if workflow_step_id is None or workflow_output_id is None:
+            return (None, None)
 
         outputs = self.get_current_pipeline_state(
         ).step_outputs[workflow_step_id]
@@ -223,6 +228,8 @@ class KiaraAppContext(AppContext, BatchController):
             workflow_step_id, workflow_input_id = \
                 self._get_workflow_input_id_for_page(
                     step_id, input_id) or (None, None)
+            if workflow_step_id is None or workflow_input_id is None:
+                continue
 
             input_connections = self.get_current_pipeline_state() \
                 .structure.steps[workflow_step_id].input_connections
@@ -231,9 +238,10 @@ class KiaraAppContext(AppContext, BatchController):
                 input_connections[workflow_input_id])
 
             if pipeline_input_id is not None and value is not None:
-                self._kiara_workflow.inputs.set_value(
-                    pipeline_input_id, value)
-                updated_values[input_id] = value
+                if self._kiara_workflow is not None:
+                    self._kiara_workflow.inputs.set_value(
+                        pipeline_input_id, value)
+                    updated_values[input_id] = value
 
     def run_processing(self, step_id: Optional[str] = None):
         try:
@@ -308,25 +316,28 @@ class KiaraAppContext(AppContext, BatchController):
         is_input: bool
     ) -> Optional[Tuple[str, str]]:
         if self._workflow is None:
-            return
+            return None
         matching_pages = [
-            p for p in self._workflow.ui.pages if p.id == page_id]
+            p
+            for p in (self._workflow.ui.pages or [])
+            if p.id == page_id
+        ]
         page = matching_pages[0] if len(matching_pages) > 0 else None
         if page is None:
-            return
+            return None
 
         mapping = page.mapping
         if mapping is None:
-            return
+            return None
 
         items = mapping.inputs if is_input else mapping.outputs
         if items is None:
-            return
+            return None
 
         matching_items = [i for i in items if i.page_io_id == io_id]
         item = matching_items[0] if len(matching_items) > 0 else None
         if item is None:
-            return
+            return None
 
         return (item.workflow_step_id or PipelineId, item.workflow_io_id)
 
