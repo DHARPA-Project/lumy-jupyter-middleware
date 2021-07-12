@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Iterable, Optional, Type, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Type, cast
 
 from lumy_middleware.context.dataregistry import (Batch, DataRegistry,
                                                   DataRegistryItem, Eq, IsIn,
@@ -34,7 +34,7 @@ def substring_fn(field: str):
     return fn
 
 
-FiltersMap: dict[str, dict[Type[QueryOperator], FilterFn]] = {
+FiltersMap: Dict[str, Dict[Type[QueryOperator], FilterFn]] = {
     'id': {
         Eq: eq_fn('id'),
         IsIn: isin_fn('id'),
@@ -68,15 +68,15 @@ def as_item(id: str, kiara: Kiara) -> DataRegistryItem:
         id=value.id,
         label=get_value_label(value),
         type=value.type_name,
-        metadata=cast(dict[str, Any], value.get_metadata())
+        metadata=cast(Dict[str, Any], value.get_metadata())
     )
 
 
 class KiaraBatch(Batch):
     _kiara: Kiara
-    _ids: list[str]
+    _ids: List[str]
 
-    def __init__(self, ids: list[str], kiara: Kiara):
+    def __init__(self, ids: List[str], kiara: Kiara):
         self._ids = ids
         self._kiara = kiara
 

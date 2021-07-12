@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from typing import Any, Dict, Generic, Iterable, List, Optional, TypeVar, Union
 
 
 class QueryOperator(ABC):
@@ -18,9 +18,9 @@ class Eq(QueryOperator, Generic[T]):
 
 
 class IsIn(QueryOperator, Generic[T]):
-    values: list[T]
+    values: List[T]
 
-    def __init__(self, values: list[T]):
+    def __init__(self, values: List[T]):
         self.values = values
 
 
@@ -35,14 +35,14 @@ class DataRegistryItem:
     id: str
     label: str
     type: str
-    metadata: dict[str, Any]
+    metadata: Dict[str, Any]
 
     def __init__(
         self,
         id: str,
         label: str,
         type: str,
-        metadata: dict[str, Any] = {}
+        metadata: Dict[str, Any] = {}
     ):
         self.id = id
         self.label = label
@@ -71,7 +71,7 @@ class Batch(ABC):
     def __getitem__(
             self,
             key
-    ) -> Union[DataRegistryItem, list[DataRegistryItem]]:
+    ) -> Union[DataRegistryItem, List[DataRegistryItem]]:
         if isinstance(key, slice):
             assert key.step is None or key.step == 1, \
                 f'Step other than 1 is not supported, it is {key.step}'

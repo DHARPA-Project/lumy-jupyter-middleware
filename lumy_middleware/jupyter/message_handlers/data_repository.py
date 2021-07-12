@@ -1,5 +1,5 @@
 import logging
-from typing import Any, cast
+from typing import Any, Dict, List, cast
 
 import pyarrow as pa
 from kiara.data.values import Value
@@ -18,11 +18,11 @@ from lumy_middleware.utils.dataclasses import to_dict
 logger = logging.getLogger(__name__)
 
 
-def get_column_names(metadata: dict[str, Any]) -> list[str]:
+def get_column_names(metadata: Dict[str, Any]) -> List[str]:
     return metadata.get('table', {}).get('column_names', [])
 
 
-def get_column_types(metadata: dict[str, Any]) -> list[str]:
+def get_column_types(metadata: Dict[str, Any]) -> List[str]:
     columns = get_column_names(metadata)
     schema = metadata.get('table', {}).get('schema', {})
     return [
@@ -31,7 +31,7 @@ def get_column_types(metadata: dict[str, Any]) -> list[str]:
     ]
 
 
-def as_table(items: list[DataRegistryItem]) -> pa.Table:
+def as_table(items: List[DataRegistryItem]) -> pa.Table:
     '''
     TODO: This is a basic implementation. Need to allow
     the method caller to select which metadata columns
@@ -60,7 +60,7 @@ class DataRepositoryHandler(MessageHandler):
         offset = msg.filter.offset or 0
         page_size = msg.filter.page_size or 5
 
-        filtered_items: list[DataRegistryItem] = batch[offset:offset+page_size]
+        filtered_items: List[DataRegistryItem] = batch[offset:offset+page_size]
         filtered_items_table = as_table(filtered_items)
 
         serialized_filtered_items, _ = serialize(filtered_items_table)
