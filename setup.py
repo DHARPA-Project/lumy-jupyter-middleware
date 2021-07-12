@@ -55,17 +55,6 @@ setup_args = dict(
         'kiara.pipelines': [
             'lumydev = lumy_middleware.dev:pipelines'
         ]
-        # 'kiara.modules': [
-        #     'lumydev=lumy_middleware.dev.modules:modules'
-        #     # 'dataUpload=lumy_middleware.dev.modules.data_upload:DataUploadModule',  # noqa
-        #     # 'dataSelection=lumy_middleware.dev.modules.data_selection:DataSelectionModule',  # noqa
-        #     # 'networkAnalysisDataMapping=lumy_middleware.dev.modules.network_analysis:NetworkAnalysisDataMappingModule',  # noqa
-        #     # 'networkAnalysisDataVis=lumy_middleware.dev.modules.network_analysis:NetworkAnalysisDataVisModule',  # noqa
-        #     # 'twoArgsMathFunction=lumy_middleware.dev.modules.two_args_math_fn:TwoArgsMathFnModule',  # noqa
-        # ],
-        # 'kiara.pipelines': [
-        #     'lumydev=lumy_middleware.dev.pipelines:pipelines',
-        # ]
     }
 )
 
