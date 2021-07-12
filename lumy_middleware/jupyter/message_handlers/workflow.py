@@ -6,7 +6,6 @@ from lumy_middleware.types import MsgWorkflowUpdated
 from lumy_middleware.types.generated import (MsgWorkflowExecute,
                                              MsgWorkflowExecutionResult,
                                              Status)
-from lumy_middleware.utils.dataclasses import to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +17,8 @@ class WorkflowMessageHandler(MessageHandler):
         Return current workflow.
         '''
         self.publisher.publish(MsgWorkflowUpdated(
-            None if self._context.current_workflow_structure is None
-            else to_dict(self._context.current_workflow_structure)
+            None if self._context.current_workflow is None
+            else self._context.current_workflow
         ))
 
     def _handle_Execute(self, msg: MsgWorkflowExecute):

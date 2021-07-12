@@ -5,10 +5,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from lumy_middleware.context.dataregistry import DataRegistry
 from lumy_middleware.types import State, Workflow
-from lumy_middleware.types.generated import DataTabularDataFilter
+from lumy_middleware.types.generated import DataTabularDataFilter, LumyWorkflow
 from tinypubsub.simple import SimplePublisher
-
-from kiara.pipeline.structure import PipelineStructureDesc
 
 
 @dataclass
@@ -24,13 +22,16 @@ class AppContext(ABC):
     "kiara" and "mock".
     '''
 
-    _event_workflow_structure_updated = SimplePublisher[Workflow]()
+    _event_workflow_updated = SimplePublisher[Workflow]()
     _event_step_input_values_updated = SimplePublisher[UpdatedIO]()
     _event_step_output_values_updated = SimplePublisher[UpdatedIO]()
     _event_processing_state_changed = SimplePublisher[State]()
 
     @abstractmethod
-    def load_workflow(self, workflow_file_or_name: Union[Path, str]) -> None:
+    def load_workflow(
+        self,
+        workflow_path_or_content: Union[Path, LumyWorkflow]
+    ) -> None:
         '''
         Load workflow and set it as the current workflow.
         A synchronous method which should raise an exception if
@@ -41,7 +42,7 @@ class AppContext(ABC):
 
     @property
     @abstractmethod
-    def current_workflow_structure(self) -> Optional[PipelineStructureDesc]:
+    def current_workflow(self) -> Optional[LumyWorkflow]:
         '''
         Returns current workflow structure or `None` if no
         workflow has been loaded.
@@ -49,13 +50,13 @@ class AppContext(ABC):
         ...
 
     @property
-    def workflow_structure_updated(self) -> SimplePublisher[Workflow]:
+    def workflow_updated(self) -> SimplePublisher[LumyWorkflow]:
         '''
         Event fired whenever current workflow structure is updated.
         This happens either when the user changes the structure or when
         the workflow is loaded.
         '''
-        return self._event_workflow_structure_updated
+        return self._event_workflow_updated
 
     @abstractmethod
     def get_step_input_value(
