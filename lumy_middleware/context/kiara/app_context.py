@@ -86,9 +86,9 @@ class ReverseMappingItem:
 
 @dataclass
 class ReverseIoMappings:
-    inputs: dict[str, list[ReverseMappingItem]] = field(
+    inputs: Dict[str, List[ReverseMappingItem]] = field(
         default_factory=lambda: defaultdict(list))
-    outputs: dict[str, list[ReverseMappingItem]] = field(
+    outputs: Dict[str, List[ReverseMappingItem]] = field(
         default_factory=lambda: defaultdict(list))
 
 
@@ -97,8 +97,8 @@ PipelineId = '__pipeline__'
 
 def build_reverse_io_mappings(
     workflow: LumyWorkflow
-) -> dict[str, ReverseIoMappings]:
-    lookup: dict[str, ReverseIoMappings] = defaultdict(ReverseIoMappings)
+) -> Dict[str, ReverseIoMappings]:
+    lookup: Dict[str, ReverseIoMappings] = defaultdict(ReverseIoMappings)
 
     for page in (workflow.ui.pages or []):
         mapping = page.mapping
@@ -123,7 +123,7 @@ class KiaraAppContext(AppContext, BatchController):
     _data_registry: DataRegistry
     _kiara = Kiara.instance()
     # kiara workflow step Id -> mappings
-    _reverse_io_mappings: dict[str, ReverseIoMappings]
+    _reverse_io_mappings: Dict[str, ReverseIoMappings]
 
     def load_workflow(
         self,
@@ -274,7 +274,7 @@ class KiaraAppContext(AppContext, BatchController):
         '''
         super().step_inputs_changed(event)
 
-        page_id_to_input_ids: dict[str, list[str]] = defaultdict(list)
+        page_id_to_input_ids: Dict[str, List[str]] = defaultdict(list)
 
         for step_id, input_ids in event.updated_step_inputs.items():
             for input_id in input_ids:
@@ -292,7 +292,7 @@ class KiaraAppContext(AppContext, BatchController):
         PipelineController
         '''
 
-        page_id_to_output_ids: dict[str, list[str]] = defaultdict(list)
+        page_id_to_output_ids: Dict[str, List[str]] = defaultdict(list)
 
         for step_id, output_ids in event.updated_step_outputs.items():
             for output_id in output_ids:
@@ -360,7 +360,7 @@ class KiaraAppContext(AppContext, BatchController):
         step_id: Optional[str],
         io_id: str,
         is_input: bool
-    ) -> list[Tuple[str, str]]:
+    ) -> List[Tuple[str, str]]:
         if self._reverse_io_mappings is None:
             return []
 
@@ -375,7 +375,7 @@ class KiaraAppContext(AppContext, BatchController):
         self,
         step_id: Optional[str],
         input_id: str
-    ) -> list[Tuple[str, str]]:
+    ) -> List[Tuple[str, str]]:
         return self._get_page_io_ids_for_workflow_io_id(
             step_id, input_id, True)
 
@@ -383,6 +383,6 @@ class KiaraAppContext(AppContext, BatchController):
         self,
         step_id: Optional[str],
         output_id: str
-    ) -> list[Tuple[str, str]]:
+    ) -> List[Tuple[str, str]]:
         return self._get_page_io_ids_for_workflow_io_id(
             step_id, output_id, False)

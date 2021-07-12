@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Type
 from uuid import uuid4
 
 import pandas as pd
@@ -49,9 +49,9 @@ def to_item(f: Path):
 
 
 class MockBatch(Batch):
-    items: list[DataRegistryItem]
+    items: List[DataRegistryItem]
 
-    def __init__(self, items: list[DataRegistryItem]):
+    def __init__(self, items: List[DataRegistryItem]):
         self.items = items
 
     def slice(self,
@@ -84,7 +84,7 @@ def substring_fn(field: str):
     return fn
 
 
-FiltersMap: dict[str, dict[Type[QueryOperator], FilterFn]] = {
+FiltersMap: Dict[str, Dict[Type[QueryOperator], FilterFn]] = {
     'id': {
         Eq: eq_fn('id'),
         IsIn: isin_fn('id'),
@@ -108,7 +108,7 @@ class MockValue(Value):
                  id: str,
                  type: str,
                  data: Any,
-                 metadata: dict[str, dict[str, Any]] = {}):
+                 metadata: Dict[str, Dict[str, Any]] = {}):
         self._data = data
         super().__init__(
             id=id,
@@ -130,7 +130,7 @@ class MockDataRegistry(DataRegistry[MockValue]):
     _files_path: Path
     _file_lookup: Dict[str, Path] = {}
 
-    _items: list[DataRegistryItem]
+    _items: List[DataRegistryItem]
 
     def __init__(self, files_location=DefaultFilesPath):
         self._files_path = files_location
