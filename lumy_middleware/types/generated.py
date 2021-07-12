@@ -569,17 +569,152 @@ class MsgWorkflowExecutionResult:
 
 
 @dataclass
+class LumyWorkflowMetadata:
+    """Workflow metadata"""
+    """Human readable name of the workflow."""
+    label: str
+
+
+class Modifier(Enum):
+    """Version modifier"""
+    EQ = "eq"
+    GT = "gt"
+    GTE = "gte"
+    LT = "lt"
+    LTE = "lte"
+
+
+@dataclass
+class PackageDependency:
+    """Package name"""
+    name: str
+    """Version modifier"""
+    modifier: Optional[Modifier] = None
+    """Package version"""
+    version: Optional[str] = None
+
+
+@dataclass
+class ProcessingDependenciesSection:
+    python_packages: Optional[List[PackageDependency]] = None
+
+
+@dataclass
+class ProcessingWorkflowSection:
+    """Name of the kiara workflow."""
+    name: str
+
+
+@dataclass
+class ProcessingSection:
+    """Workflow processing configuration details"""
+    workflow: ProcessingWorkflowSection
+    dependencies: Optional[ProcessingDependenciesSection] = None
+
+
+@dataclass
+class WorkflowPageComponent:
+    """Details of the component that renders this page"""
+    """ID of the component"""
+    id: str
+
+
+class InputOrOutput(Enum):
+    INPUT = "input"
+    OUTPUT = "output"
+
+
+@dataclass
+class DataPreviewLayoutMetadataItem:
+    """Input or output that has to be rendered in the data preview section for this step context."""
+    """ID of the input or output to render"""
+    id: Optional[str] = None
+    type: Optional[InputOrOutput] = None
+
+
+@dataclass
+class WorkflowPageLayoutMetadata:
+    """Layout metadata"""
+    data_preview: Optional[List[DataPreviewLayoutMetadataItem]] = None
+
+
+@dataclass
+class WorkflowPageMapping:
+    """Mapping of a single input/output outlet between the processing pipeline and the workflow
+    page.
+    """
+    """ID of the input/output on the page"""
+    page_io_id: str
+    """ID of the input/output on the processing side"""
+    workflow_io_id: str
+    """ID of the step of the pipeline. If not provided, the input output is considered to be one
+    of the pipeline input/outputs.
+    """
+    workflow_step_id: Optional[str] = None
+
+
+@dataclass
+class WorkflowPageMappingDetails:
+    """Details of mapping between page inputs/outputs and processing workflow steps
+    inputs/outputs
+    """
+    inputs: Optional[List[WorkflowPageMapping]] = None
+    outputs: Optional[List[WorkflowPageMapping]] = None
+
+
+@dataclass
+class LumyWorkflowPageMetadata:
+    """Workflow page metadata"""
+    """Human readable name of the page."""
+    label: Optional[str] = None
+
+
+@dataclass
+class WorkflowPageDetails:
+    """All details needed to render a page (step) of the workflow."""
+    """Details of the component that renders this page"""
+    component: WorkflowPageComponent
+    """ID (slug) of the page. Must be unique within this workflow."""
+    id: str
+    """Layout metadata"""
+    layout: Optional[WorkflowPageLayoutMetadata] = None
+    """Details of mapping between page inputs/outputs and processing workflow steps
+    inputs/outputs
+    """
+    mapping: Optional[WorkflowPageMappingDetails] = None
+    """Workflow page metadata"""
+    meta: Optional[LumyWorkflowPageMetadata] = None
+
+
+@dataclass
+class RenderingSection:
+    """Workflow rendering definitions"""
+    """List of pages that comprise the workflow UI part."""
+    pages: Optional[List[WorkflowPageDetails]] = None
+
+
+@dataclass
+class LumyWorkflow:
+    """Lumy workflow configuration.
+    Contains all details needed for Lumy to load, install dependencies, render and run Kiara
+    workflow.
+    """
+    """Workflow metadata"""
+    meta: LumyWorkflowMetadata
+    """Workflow processing configuration details"""
+    processing: ProcessingSection
+    """Workflow rendering definitions"""
+    ui: RenderingSection
+
+
+@dataclass
 class MsgWorkflowUpdated:
     """Target: "workflow"
     Message type: "Updated"
     
-    Contains current workflow.
+    Workflow currently loaded into the app.
     """
-    """Current workflow state. Type: PipelineState from
-    https://dharpa.org/kiara/development/entities/modules/PipelineState.json .
-    Not using it as a reference because of a code generation bug.
-    """
-    workflow: Optional[Dict[str, Any]] = None
+    workflow: Optional[LumyWorkflow] = None
 
 
 @dataclass

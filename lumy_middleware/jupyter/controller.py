@@ -52,7 +52,7 @@ def preprocess_dict(d):
 
 def get_dev_workflow_path():
     return pathlib.Path(dev_pkg.__file__).parent / "resources" / \
-        "pipelines" / "networkAnalysisDev.json"
+        "networkAnalysisWorkflow.yml"
 
 
 class IpythonKernelController(TargetPublisher):

@@ -19,5 +19,7 @@
   "python.linting.pylintUseMinimalCheckers": true,
   "python.linting.flake8Enabled": true,
   "python.linting.flake8Path": ".venv/bin/flake8",
+  "python.linting.mypyEnabled": true,
+  "python.linting.mypyPath": ".venv/bin/mypy",
   "python.analysis.useLibraryCodeForTypes": false
 }
