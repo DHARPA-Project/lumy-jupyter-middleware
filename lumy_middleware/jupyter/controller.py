@@ -39,6 +39,8 @@ def preprocess_dict(d):
             return preprocess_dict(v)
         elif isinstance(v, pa.Table):
             return serialize_table(v)
+        elif isinstance(v, list):
+            return [val(i) for i in v]
         else:
             if isinstance(v, Enum):
                 return v.value

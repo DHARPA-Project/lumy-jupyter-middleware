@@ -52,5 +52,11 @@ ui:
           - pageIoId: graphStats
             workflowIoId: graphStats
             workflowStepId: data_vis
+      layout:
+        dataPreview:
+          - type: input
+            id: nodes
+          - type: output
+            id: directConnections
 meta:
   label: Mock workflow

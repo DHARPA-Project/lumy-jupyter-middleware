@@ -628,8 +628,8 @@ class InputOrOutput(Enum):
 class DataPreviewLayoutMetadataItem:
     """Input or output that has to be rendered in the data preview section for this step context."""
     """ID of the input or output to render"""
-    id: Optional[str] = None
-    type: Optional[InputOrOutput] = None
+    id: str
+    type: InputOrOutput
 
 
 @dataclass
