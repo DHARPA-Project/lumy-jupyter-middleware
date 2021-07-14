@@ -1,5 +1,5 @@
 import logging
-from typing import List, Mapping, cast
+from typing import List, Mapping, Optional, cast
 
 import networkx as nx
 import numpy as np
@@ -8,6 +8,8 @@ import pyarrow as pa
 from kiara import Kiara
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
+from kiara.module_config import KiaraModuleConfig
+from pydantic.fields import Field
 
 logger = logging.getLogger(__name__)
 
@@ -127,18 +129,18 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
         outputs.set_value('edges', edges)
 
 
+class NetworkAnalysisDataVisModuleConfig(KiaraModuleConfig):
+    use_graph: Optional[bool] = Field(
+        description="If set to true, the module expects a graph object in 'graph' input. Otherwise it will construct the graph from two table: 'nodes' and 'edges'.",
+        default=False,
+    )
+
+
 class NetworkAnalysisDataVisModule(KiaraModule):
+    _config_cls = NetworkAnalysisDataVisModuleConfig
 
     def create_input_schema(self) -> Mapping[str, ValueSchema]:
-        return {
-            "nodes": ValueSchema(
-                type="table",
-                doc="Nodes table.",
-            ),
-            "edges": ValueSchema(
-                type="table",
-                doc="Edges table.",
-            ),
+        schema = {
             "shortestPathSource": ValueSchema(
                 type="any",
                 doc="ID of the start node for the shortest path calculations",
@@ -158,6 +160,23 @@ class NetworkAnalysisDataVisModule(KiaraModule):
                 default=None
             ),
         }
+
+        if self.get_config_value("use_graph"):
+            schema['graph'] = ValueSchema(
+                type="graph",
+                doc="Graph",
+            )
+        else:
+            schema['nodes'] = ValueSchema(
+                type="table",
+                doc="Nodes table.",
+            )
+            schema['edges'] = ValueSchema(
+                type="table",
+                doc="Edges table.",
+            )
+
+        return schema
 
     def create_output_schema(self) -> Mapping[str, ValueSchema]:
         return {
@@ -180,20 +199,24 @@ class NetworkAnalysisDataVisModule(KiaraModule):
         }
 
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
-        edges = inputs.get_value_data('edges').to_pandas()
+        if self.get_config_value("use_graph"):
+            graph: nx.Graph = inputs.get_value_data('gg')
+        else:
+            edges = inputs.get_value_data('edges').to_pandas()
 
-        graph: nx.Graph = nx.from_pandas_edgelist(
-            edges,
-            "srcId", "tgtId",
-            edge_attr=True,
-            create_using=nx.DiGraph()
-        )
+            graph: nx.Graph = nx.from_pandas_edgelist(
+                edges,
+                "srcId", "tgtId",
+                edge_attr=True,
+                create_using=nx.DiGraph()
+            )
 
-        nodes = inputs.get_value_data('nodes').to_pandas()
-        graph.add_nodes_from(nodes.set_index(
-            'id').to_dict('index').items())
+            nodes = inputs.get_value_data('nodes').to_pandas()
+            graph.add_nodes_from(nodes.set_index(
+                'id').to_dict('index').items())
 
-        if len(nodes) > 0:
+        ids = list(graph.nodes())
+        if len(ids) > 0:
             degree_dict = dict(graph.degree(graph.nodes()))
             betweenness_dict = nx.betweenness_centrality(graph)
             eigenvector_dict = nx.eigenvector_centrality(graph)
@@ -204,7 +227,7 @@ class NetworkAnalysisDataVisModule(KiaraModule):
 
         isolated_nodes_ids = list(nx.isolates(graph))
 
-        ids = inputs.get_value_data('nodes')['id'].to_numpy()
+        ids = np.array(ids)
 
         graph_data = pa.Table.from_pydict({
             'degree': [degree_dict[i] for i in ids],

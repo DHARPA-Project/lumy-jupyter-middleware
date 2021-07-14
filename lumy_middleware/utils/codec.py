@@ -26,6 +26,7 @@ def deserialize_table(serialized_table: str) -> pa.Table:
 def serialize(value: Any) -> Tuple[Any, DataType]:
     '''
     Serialize any value to wire format.
+    TODO: limit serialisation to Lumy supported formats.
     '''
     if isinstance(value, pa.Table):
         return (serialize_table(value), DataType.TABLE)

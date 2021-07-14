@@ -1,0 +1,57 @@
+{
+  "$schema": "https://dharpa.org/kiara/development/entities/modules/PipelineModuleConfig.json",
+  "module_type_name": "networkAnalysisDevNew",
+  "doc": "Network analysis development workflow. Mostly used to experiment with the VRE",
+  "steps": [
+    {
+      "module_type": "lumydev.data_selection.data_selection",
+      "step_id": "data_selection"
+    },
+    {
+      "module_type": "lumydev.network_analysis.network_analysis_data_mapping",
+      "step_id": "data_mapping",
+      "input_links": {
+        "corpus": "data_selection.selectedItems"
+      }
+    },
+    {
+      "module_type": "network.graphs.create_graph_from_edges_table",
+      "step_id": "create_graph",
+      "input_links": {
+        "edges_table": "data_mapping.edges"
+      },
+      "module_config": {
+        "constants": {
+          "source_column": "srcId",
+          "target_column": "tgtId",
+          "weight_column": "weight"
+        }
+      }
+    },
+    {
+      "module_type": "network.graphs.augment_network_graph",
+      "step_id": "augment_graph",
+      "input_links": {
+        "graph": "create_graph.graph",
+        "node_attributes": "data_mapping.nodes"
+      },
+      "module_config": {
+        "constants": {
+          "index_column_name": "id"
+        }
+      }
+    },
+    {
+      "module_type": "lumydev.network_analysis.network_analysis_data_vis",
+      "step_id": "data_vis",
+      "input_links": {
+        "graph": "augment_graph.graph"
+      },
+      "module_config": {
+        "use_graph": true
+      }
+    }
+  ],
+  "input_aliases": {},
+  "output_aliases": {}
+}
