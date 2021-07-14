@@ -63,12 +63,12 @@ class DataRepositoryHandler(MessageHandler):
         filtered_items: List[DataRegistryItem] = batch[offset:offset+page_size]
         filtered_items_table = as_table(filtered_items)
 
-        serialized_filtered_items, _ = serialize(filtered_items_table)
+        serialized_filtered_items = serialize(filtered_items_table)
         stats = TableStats(rows_count=len(batch))
 
         return MsgDataRepositoryItems(
             filter=msg.filter,
-            items=serialized_filtered_items,
+            items=serialized_filtered_items.value,
             stats=cast(Any, to_dict(stats)))
 
     def _handle_GetItemValue(self, msg: MsgDataRepositoryGetItemValue):

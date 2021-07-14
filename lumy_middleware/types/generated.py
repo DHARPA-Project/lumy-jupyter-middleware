@@ -575,6 +575,33 @@ class LumyWorkflowMetadata:
     label: str
 
 
+@dataclass
+class DataTransformationItemPipelineDetails:
+    """Name of the Kiara pipeline to use."""
+    name: str
+
+
+@dataclass
+class DataTransformationItem:
+    """Data type transformation method details."""
+    pipeline: DataTransformationItemPipelineDetails
+    """Name of source Kiara data type to apply transformation to."""
+    type: str
+    """If set to 'true', this transformation will be used for this particular type by default if
+    more than one transformation is available and no view is provided.
+    """
+    default: Optional[bool] = None
+    """Name of the view which serves as an additional hint which transformation to choose if
+    there is more than one available
+    """
+    view: Optional[str] = None
+
+
+@dataclass
+class DataProcessingDetailsSection:
+    transformation: Optional[List[DataTransformationItem]] = None
+
+
 class Modifier(Enum):
     """Version modifier"""
     EQ = "eq"
@@ -609,6 +636,7 @@ class ProcessingWorkflowSection:
 class ProcessingSection:
     """Workflow processing configuration details"""
     workflow: ProcessingWorkflowSection
+    data: Optional[DataProcessingDetailsSection] = None
     dependencies: Optional[ProcessingDependenciesSection] = None
 
 

@@ -131,7 +131,11 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
 
 class NetworkAnalysisDataVisModuleConfig(KiaraModuleConfig):
     use_graph: Optional[bool] = Field(
-        description="If set to true, the module expects a graph object in 'graph' input. Otherwise it will construct the graph from two table: 'nodes' and 'edges'.",
+        description='''
+        If set to true, the module expects a graph object in 'graph'
+        input. Otherwise it will construct the graph from two
+        table: 'nodes' and 'edges'.
+        ''',
         default=False,
     )
 
@@ -200,11 +204,11 @@ class NetworkAnalysisDataVisModule(KiaraModule):
 
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
         if self.get_config_value("use_graph"):
-            graph: nx.Graph = inputs.get_value_data('gg')
+            graph: nx.Graph = inputs.get_value_data('graph')
         else:
             edges = inputs.get_value_data('edges').to_pandas()
 
-            graph: nx.Graph = nx.from_pandas_edgelist(
+            graph = nx.from_pandas_edgelist(
                 edges,
                 "srcId", "tgtId",
                 edge_attr=True,
@@ -227,8 +231,6 @@ class NetworkAnalysisDataVisModule(KiaraModule):
 
         isolated_nodes_ids = list(nx.isolates(graph))
 
-        ids = np.array(ids)
-
         graph_data = pa.Table.from_pydict({
             'degree': [degree_dict[i] for i in ids],
             'eigenvector': [eigenvector_dict[i] for i in ids],
@@ -236,7 +238,7 @@ class NetworkAnalysisDataVisModule(KiaraModule):
             'isIsolated': [i in isolated_nodes_ids for i in ids],
             # TODO: what was "isLarge" exactly? It is not
             # currently used in the visualisation.
-            'isLarge': np.random.rand(*ids.shape) > 0.5
+            'isLarge': np.random.rand(*[len(ids)]) > 0.5
         })
         outputs.set_value('graphData', graph_data)
 
