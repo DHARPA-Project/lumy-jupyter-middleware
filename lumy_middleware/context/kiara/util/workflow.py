@@ -42,7 +42,8 @@ def get_mapping(
 
 def get_data_transformations_from_type(
     workflow: LumyWorkflow,
-    type: str
+    type: str,
+    type_is_source: bool = True
 ) -> List[DataTransformationDescriptor]:
     if workflow is None \
         or workflow.processing is None \
@@ -54,5 +55,5 @@ def get_data_transformations_from_type(
     return [
         t
         for t in transformations
-        if t.source_type == type
+        if (t.source_type == type if type_is_source else t.target_type == type)
     ]

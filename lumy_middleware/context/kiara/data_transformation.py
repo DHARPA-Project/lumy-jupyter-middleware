@@ -23,6 +23,11 @@ def get_transformation_method(
     is_input: bool,
     value: Value
 ) -> Optional[DataTransformationDescriptor]:
+    '''
+    Given an input or output ID `io_id` of a page and Kiara workflow value
+    `value` find transformation method that transforms `value` into
+    another value of type expected by `io_id`.
+    '''
     page = get_page(workflow, page_id)
     mapping = get_mapping(page, io_id, is_input) if page is not None else None
     if mapping is None:
@@ -83,6 +88,54 @@ def get_transformation_method(
                 f'More than one transformation ({len(transformations)})' +
                 f' found for type "{value_type}". Using the first one.'
             )
+
+    return transformations[0]
+
+
+def get_reverse_transformation_method(
+    workflow: LumyWorkflow,
+    page_id: str,
+    io_id: str,
+    is_input: bool,
+    value: Value
+) -> Optional[DataTransformationDescriptor]:
+    '''
+    Given page input or output with ID `io_id` and value `value`
+    of the corresponding Kiara workflow input or output, return
+    a transformation that will transform value of `io_id` into
+    value of type of `value`.
+    '''
+    page = get_page(workflow, page_id)
+    mapping = get_mapping(page, io_id, is_input) if page is not None else None
+    if mapping is None or mapping.type is None:
+        return None
+
+    value_type = value.type_name
+    transformations = get_data_transformations_from_type(
+        workflow, value_type, type_is_source=False)
+
+    transformations = [
+        t for t in transformations
+        if t.source_type == mapping.type
+    ]
+
+    if mapping.view is not None:
+        transformations = [
+            t for t in transformations
+            if t.view == mapping.view
+        ]
+
+    if len(transformations) > 1:
+        # Try to find default
+        try:
+            return next(filter(is_default_transformation, transformations))
+        except StopIteration:
+            logger.warn(
+                f'More than one transformation ({len(transformations)})' +
+                f' found for type "{value_type}". Using the first one.'
+            )
+    if len(transformations) == 0:
+        return None
 
     return transformations[0]
 

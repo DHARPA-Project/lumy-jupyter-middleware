@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from lumy_middleware.context.context import AppContext, UpdatedIO
 from lumy_middleware.context.dataregistry import DataRegistry
 from lumy_middleware.context.kiara.data_transformation import (
-    get_transformation_method, transform_value)
+    get_reverse_transformation_method, get_transformation_method,
+    transform_value)
 from lumy_middleware.context.kiara.dataregistry import KiaraDataRegistry
 from lumy_middleware.context.kiara.util.data import get_value_data
 from lumy_middleware.types.generated import (DataTabularDataFilter,
@@ -221,6 +222,9 @@ class KiaraAppContext(AppContext, PipelineController):
         step_id: str,  # a page ID
         input_values: Optional[Dict[str, Any]]  # page input IDs
     ):
+        if self._workflow is None or self._kiara_workflow is None:
+            return
+
         updated_values = {}
 
         for input_id, value in (input_values or {}).items():
@@ -237,10 +241,21 @@ class KiaraAppContext(AppContext, PipelineController):
                 input_connections[workflow_input_id])
 
             if pipeline_input_id is not None and value is not None:
+                # 1. get reverse transformation descriptor
+                # 2. transform value
+                transformation_descriptor = get_reverse_transformation_method(
+                    self._workflow,
+                    step_id, input_id,
+                    is_input=True,
+                    value=self._kiara_workflow.inputs.get_value_obj(
+                        pipeline_input_id)
+                )
+                if transformation_descriptor is not None:
+                    value = transform_value(self._kiara, value,
+                                            transformation_descriptor)
                 updated_values[pipeline_input_id] = value
 
-        if self._kiara_workflow is not None:
-            self._kiara_workflow.inputs.set_values(**updated_values)
+        self._kiara_workflow.inputs.set_values(**updated_values)
 
     def run_processing(self, step_id: Optional[str] = None):
         try:
