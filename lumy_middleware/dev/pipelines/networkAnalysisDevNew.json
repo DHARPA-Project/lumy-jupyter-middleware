@@ -22,8 +22,8 @@
       },
       "module_config": {
         "constants": {
-          "source_column": "srcId",
-          "target_column": "tgtId",
+          "source_column": "source",
+          "target_column": "target",
           "weight_column": "weight"
         }
       }

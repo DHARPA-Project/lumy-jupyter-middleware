@@ -3,19 +3,20 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from lumy_middleware.context.context import AppContext, UpdatedIO
 from lumy_middleware.context.dataregistry import DataRegistry
+from lumy_middleware.context.kiara.data_transformation import (
+    get_transformation_method, transform_value)
 from lumy_middleware.context.kiara.dataregistry import KiaraDataRegistry
-from lumy_middleware.context.kiara.table_utils import filter_table, sort_table
+from lumy_middleware.context.kiara.util.data import get_value_data
 from lumy_middleware.types.generated import (DataTabularDataFilter,
-                                             LumyWorkflow, State, TableStats)
+                                             LumyWorkflow, State)
 from lumy_middleware.utils.dataclasses import from_dict, from_yaml
-from pyarrow import Table
 
 from kiara import Kiara
-from kiara.data.values import DataValue, PipelineValue, Value
+from kiara.data.values import PipelineValue
 from kiara.defaults import SpecialValue
 from kiara.pipeline.controller import PipelineController
 from kiara.workflow import KiaraWorkflow
@@ -29,38 +30,6 @@ logger = logging.getLogger(__name__)
 def is_default_value_acceptable(value: PipelineValue) -> bool:
     return value.value_schema.default is not None and \
         value.value_schema.default != SpecialValue.NOT_SET
-
-
-def get_value_data(
-    value: Value,
-    filter: Optional[DataTabularDataFilter]
-) -> Tuple[Any, Any]:
-    if not hasattr(value, 'get_value_data'):
-        raise Exception(
-            f'Don\'t know how to get value from class "{value.__class__}"')
-    actual_value = cast(DataValue, value).get_value_data()
-
-    # TODO: Type metadata is not in fully implemented in kiara yet
-    # When it is, replace isinstance check with metadata type check
-    if isinstance(actual_value, Table):
-        table: Table = actual_value
-        if filter is not None:
-            if filter.full_value:
-                table_stats = TableStats(rows_count=table.num_rows)
-                return (table, table_stats)
-            else:
-                filtered_table = filter_table(table, filter.condition)
-                sorted_table = sort_table(filtered_table, filter.sorting)
-                table_stats = TableStats(rows_count=sorted_table.num_rows)
-
-                offset = filter.offset or 0
-                page_size = filter.page_size or 5
-                table_page = sorted_table.slice(offset, page_size)
-                return (table_page, table_stats)
-
-        table_stats = TableStats(rows_count=table.num_rows)
-        return (None, table_stats)
-    return (actual_value, None)
 
 
 def get_pipeline_input_id(ids: List[str]) -> Optional[str]:
@@ -176,6 +145,12 @@ class KiaraAppContext(AppContext, PipelineController):
         input_id: str,  # a page input ID
         filter: Optional[DataTabularDataFilter] = None
     ) -> Tuple[Any, Any]:
+        '''
+        Returns value transformed according to the rules.
+        '''
+        if self._workflow is None:
+            return (None, None)
+
         workflow_step_id, workflow_input_id = \
             self._get_workflow_input_id_for_page(
                 step_id, input_id) or (None, None)
@@ -191,6 +166,16 @@ class KiaraAppContext(AppContext, PipelineController):
             return (None, None)
 
         value = self.get_step_input(workflow_step_id, workflow_input_id)
+        transformation_descriptor = get_transformation_method(
+            self._workflow,
+            step_id,
+            input_id,
+            is_input=True,
+            value=value
+        )
+        if transformation_descriptor is not None:
+            value = transform_value(
+                self._kiara, value, transformation_descriptor)
 
         return get_value_data(value, filter)
 
@@ -200,6 +185,9 @@ class KiaraAppContext(AppContext, PipelineController):
         output_id: str,  # a page output ID
         filter: Optional[DataTabularDataFilter] = None
     ) -> Tuple[Any, Any]:
+        if self._workflow is None:
+            return (None, None)
+
         workflow_step_id, workflow_output_id = \
             self._get_workflow_output_id_for_page(
                 step_id, output_id) or (None, None)
@@ -215,6 +203,16 @@ class KiaraAppContext(AppContext, PipelineController):
             return (None, None)
 
         value = self.get_step_output(workflow_step_id, workflow_output_id)
+        transformation_descriptor = get_transformation_method(
+            self._workflow,
+            step_id,
+            output_id,
+            is_input=False,
+            value=value
+        )
+        if transformation_descriptor is not None:
+            value = transform_value(
+                self._kiara, value, transformation_descriptor)
 
         return get_value_data(value, filter)
 

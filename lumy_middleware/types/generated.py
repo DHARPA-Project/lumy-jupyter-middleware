@@ -582,11 +582,13 @@ class DataTransformationItemPipelineDetails:
 
 
 @dataclass
-class DataTransformationItem:
+class DataTransformationDescriptor:
     """Data type transformation method details."""
     pipeline: DataTransformationItemPipelineDetails
     """Name of source Kiara data type to apply transformation to."""
-    type: str
+    source_type: str
+    """Name of target Kiara data type to apply transformation to."""
+    target_type: str
     """If set to 'true', this transformation will be used for this particular type by default if
     more than one transformation is available and no view is provided.
     """
@@ -599,7 +601,7 @@ class DataTransformationItem:
 
 @dataclass
 class DataProcessingDetailsSection:
-    transformation: Optional[List[DataTransformationItem]] = None
+    transformations: Optional[List[DataTransformationDescriptor]] = None
 
 
 class Modifier(Enum):
@@ -675,6 +677,12 @@ class WorkflowPageMapping:
     page_io_id: str
     """ID of the input/output on the processing side"""
     workflow_io_id: str
+    """Specifies type the input is expected to be in.
+    A respective data transformation method will be used.
+    """
+    type: Optional[str] = None
+    """Name of the view transformation to use for the expected type."""
+    view: Optional[str] = None
     """ID of the step of the pipeline. If not provided, the input output is considered to be one
     of the pipeline input/outputs.
     """

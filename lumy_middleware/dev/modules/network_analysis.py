@@ -117,16 +117,15 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
             ['id', 'label', 'group'],
             self._kiara
         )
-        outputs.set_value('nodes', nodes)
 
         edges_mapping_table = inputs.get_value_data(
             'edgesMappingTable') or pa.Table.from_pydict({})
         edges = build_table_from_mapping(
             edges_mapping_table,
-            ['srcId', 'tgtId', 'weight'],
+            ['source', 'target', 'weight'],
             self._kiara
         )
-        outputs.set_value('edges', edges)
+        outputs.set_values(nodes=nodes, edges=edges)
 
 
 class NetworkAnalysisDataVisModuleConfig(KiaraModuleConfig):
@@ -167,7 +166,7 @@ class NetworkAnalysisDataVisModule(KiaraModule):
 
         if self.get_config_value("use_graph"):
             schema['graph'] = ValueSchema(
-                type="graph",
+                type="network_graph",
                 doc="Graph",
             )
         else:
@@ -210,7 +209,7 @@ class NetworkAnalysisDataVisModule(KiaraModule):
 
             graph = nx.from_pandas_edgelist(
                 edges,
-                "srcId", "tgtId",
+                "source", "target",
                 edge_attr=True,
                 create_using=nx.DiGraph()
             )

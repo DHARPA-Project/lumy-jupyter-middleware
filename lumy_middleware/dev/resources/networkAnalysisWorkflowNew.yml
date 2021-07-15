@@ -1,6 +1,18 @@
 processing:
   workflow:
     name: lumydev.networkAnalysisDevNew
+  data:
+    transformations:
+      - sourceType: network_graph
+        targetType: table
+        view: nodes
+        pipeline:
+          name: lumydev.graph_transformation.to_nodes_table
+      - sourceType: network_graph
+        targetType: table
+        view: edges
+        pipeline:
+          name: lumydev.graph_transformation.to_edges_table
 ui:
   pages:
     - id: dataSelection
@@ -37,11 +49,15 @@ ui:
       mapping:
         inputs:
           - pageIoId: nodes
-            workflowIoId: nodes
+            workflowIoId: graph
             workflowStepId: data_vis
+            type: table
+            view: nodes
           - pageIoId: edges
-            workflowIoId: edges
+            workflowIoId: graph
             workflowStepId: data_vis
+            type: table
+            view: edges
           - pageIoId: graph
             workflowIoId: graph
             workflowStepId: data_vis
