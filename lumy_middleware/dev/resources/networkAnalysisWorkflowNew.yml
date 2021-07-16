@@ -48,34 +48,41 @@ ui:
         label: Data visusalisation
       mapping:
         inputs:
+        outputs:
           - pageIoId: nodes
             workflowIoId: graph
-            workflowStepId: data_vis
+            workflowStepId: centrality_measures
             type: table
             view: nodes
           - pageIoId: edges
             workflowIoId: graph
-            workflowStepId: data_vis
+            workflowStepId: centrality_measures
             type: table
             view: edges
-          - pageIoId: graph
-            workflowIoId: graph
-            workflowStepId: data_vis
-        outputs:
-          - pageIoId: graphData
-            workflowIoId: graphData
-            workflowStepId: data_vis
-          - pageIoId: directConnections
-            workflowIoId: directConnections
-            workflowStepId: data_vis
-          - pageIoId: graphStats
-            workflowIoId: graphStats
-            workflowStepId: data_vis
+          - pageIoId: nodesCount
+            workflowIoId: nodesCount
+            workflowStepId: graph_properties
+          - pageIoId: edgesCount
+            workflowIoId: edgesCount
+            workflowStepId: graph_properties
+          - pageIoId: density
+            workflowIoId: density
+            workflowStepId: graph_properties
+          - pageIoId: averageDegree
+            workflowIoId: averageDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageInDegree
+            workflowIoId: averageInDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageOutDegree
+            workflowIoId: averageOutDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageShortestPathLength
+            workflowIoId: averageShortestPathLength
+            workflowStepId: graph_properties
       layout:
         dataPreview:
           - type: input
             id: nodes
-          - type: output
-            id: directConnections
 meta:
   label: Mock workflow

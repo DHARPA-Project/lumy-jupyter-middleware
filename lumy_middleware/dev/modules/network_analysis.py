@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import List, Mapping, Optional, cast
 
@@ -9,6 +10,8 @@ from kiara import Kiara
 from kiara.data.values import ValueSchema
 from kiara.module import KiaraModule, ValueSet
 from kiara.module_config import KiaraModuleConfig
+from networkx import (DiGraph, Graph, density, is_directed, isolates,
+                      set_node_attributes)
 from pydantic.fields import Field
 
 logger = logging.getLogger(__name__)
@@ -287,3 +290,152 @@ class NetworkAnalysisDataVisModule(KiaraModule):
             'averageShortestPathLength': avg_shortest_path_len
         }
         outputs.set_value('graphStats', graph_stats)
+
+    class AddCentralityCalculationsModule(KiaraModule):
+
+        def create_input_schema(self) -> Mapping[str, ValueSchema]:
+            return {
+                'graph': ValueSchema(type='network_graph'),
+                'degree_property_name': ValueSchema(
+                    type='string',
+                    default='degree'
+                ),
+                'indegree_property_name': ValueSchema(
+                    type='string',
+                    default='indegree'
+                ),
+                'outdegree_property_name': ValueSchema(
+                    type='string',
+                    default='outdegree'
+                ),
+                'isolated_property_name': ValueSchema(
+                    type='string',
+                    default='isolated'
+                ),
+                'betweenness_property_name': ValueSchema(
+                    type='string',
+                    default='betweenness'
+                ),
+                'eigenvector_property_name': ValueSchema(
+                    type='string',
+                    default='eigenvector'
+                ),
+            }
+
+        def create_output_schema(self) -> Mapping[str, ValueSchema]:
+            return {
+                'graph': ValueSchema(type='network_graph'),
+            }
+
+        def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
+            graph: Graph = inputs.get_value_data("graph")
+            graph = copy.deepcopy(graph)
+
+            # degree
+            degree_dict = graph.degree()
+            set_node_attributes(
+                graph,
+                dict(degree_dict),
+                inputs.get_value_data('degree_property_name')
+            )
+
+            # isolated
+            isolated_flag_dict = {id: True for id in isolates(graph)}
+            set_node_attributes(
+                graph,
+                isolated_flag_dict,
+                inputs.get_value_data('isolated_property_name')
+            )
+
+            if is_directed(graph):
+                graph = cast(DiGraph, graph)
+
+                # indegree
+                indegree_dict = graph.in_degree()
+                set_node_attributes(
+                    graph,
+                    dict(indegree_dict),
+                    inputs.get_value_data('indegree_property_name')
+                )
+
+                # outdegree
+                outdegree_dict = graph.out_degree()
+                set_node_attributes(
+                    graph,
+                    dict(outdegree_dict),
+                    inputs.get_value_data('outdegree_property_name')
+                )
+
+            # eigenvector
+            # betweenness
+            betweenness_dict = nx.betweenness_centrality(graph)
+            eigenvector_dict = nx.eigenvector_centrality(graph)
+
+            set_node_attributes(
+                graph,
+                betweenness_dict,
+                inputs.get_value_data('betweenness_property_name')
+            )
+            set_node_attributes(
+                graph,
+                eigenvector_dict,
+                inputs.get_value_data('eigenvector_property_name')
+            )
+
+            outputs.set_value('graph', graph)
+
+
+class ExtractGraphPropertiesModule(KiaraModule):
+    """Extract inherent properties of a network graph."""
+
+    _module_type_name = "graph_properties"
+
+    def create_input_schema(self) -> Mapping[str, ValueSchema]:
+        return {
+            'graph': ValueSchema(type='network_graph'),
+        }
+
+    def create_output_schema(self) -> Mapping[str, ValueSchema]:
+        return {
+            'nodesCount': ValueSchema(type='integer'),
+            'edgesCount': ValueSchema(type='integer'),
+            'density': ValueSchema(type='float'),
+            'averageDegree': ValueSchema(type='float', optional=True),
+            'averageInDegree': ValueSchema(type='float', optional=True),
+            'averageOutDegree': ValueSchema(type='float', optional=True),
+            'averageShortestPathLength': ValueSchema(type='float',
+                                                     optional=True),
+        }
+
+    def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
+        graph: Graph = inputs.get_value_data("graph")
+
+        nodes_count = graph.number_of_nodes()
+
+        output_values = {
+            'nodesCount': nodes_count,
+            'edgesCount': graph.number_of_edges(),
+            'density': density(graph)
+        }
+
+        if nodes_count > 0:
+            if is_directed(graph):
+                graph = cast(DiGraph, graph)
+                output_values['averageInDegree'] = sum(
+                    d for _, d in graph.in_degree()) / float(nodes_count)
+                output_values['averageOutDegree'] = sum(
+                    d for _, d in graph.out_degree()) / float(nodes_count)
+            else:
+                output_values['averageDegree'] = sum(
+                    d for _, d in graph.degree()) / float(nodes_count)
+
+        try:
+            output_values['averageShortestPathLength'] = \
+                nx.average_shortest_path_length(graph)
+        except Exception:
+            # TODO: This sometimes throws this error:
+            # networkx.exception.NetworkXError: Graph is not weakly connected.
+            # Look into it when there is a moment
+            pass
+
+        outputs.set_values(**output_values)

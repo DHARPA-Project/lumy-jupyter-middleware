@@ -42,13 +42,17 @@
       }
     },
     {
-      "module_type": "lumydev.network_analysis.network_analysis_data_vis",
-      "step_id": "data_vis",
+      "module_type": "lumydev.network_analysis.add_centrality_calculations",
+      "step_id": "centrality_measures",
       "input_links": {
         "graph": "augment_graph.graph"
-      },
-      "module_config": {
-        "use_graph": true
+      }
+    },
+    {
+      "module_type": "lumydev.network_analysis.graph_properties",
+      "step_id": "graph_properties",
+      "input_links": {
+        "graph": "centrality_measures.graph"
       }
     }
   ],
