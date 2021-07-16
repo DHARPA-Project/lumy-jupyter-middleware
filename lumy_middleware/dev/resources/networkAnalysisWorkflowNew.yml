@@ -1,0 +1,88 @@
+processing:
+  workflow:
+    name: lumydev.networkAnalysisDevNew
+  data:
+    transformations:
+      - sourceType: network_graph
+        targetType: table
+        view: nodes
+        pipeline:
+          name: lumydev.graph_transformation.to_nodes_table
+      - sourceType: network_graph
+        targetType: table
+        view: edges
+        pipeline:
+          name: lumydev.graph_transformation.to_edges_table
+ui:
+  pages:
+    - id: dataSelection
+      component:
+        id: dataSelection
+      meta:
+        label: Data Selection
+      mapping:
+        inputs:
+          - pageIoId: selectedItemsIds
+            workflowIoId: selectedItemsIds
+            workflowStepId: data_selection
+    - id: dataMapping
+      component:
+        id: networkAnalysisDataMapping
+      meta:
+        label: Data mapping
+      mapping:
+        inputs:
+          - pageIoId: corpus
+            workflowIoId: corpus
+            workflowStepId: data_mapping
+          - pageIoId: nodesMappingTable
+            workflowIoId: nodesMappingTable
+            workflowStepId: data_mapping
+          - pageIoId: edgesMappingTable
+            workflowIoId: edgesMappingTable
+            workflowStepId: data_mapping
+    - id: datavis
+      component:
+        id: networkAnalysisDataVis
+      meta:
+        label: Data visusalisation
+      mapping:
+        inputs:
+        outputs:
+          - pageIoId: nodes
+            workflowIoId: graph
+            workflowStepId: centrality_measures
+            type: table
+            view: nodes
+          - pageIoId: edges
+            workflowIoId: graph
+            workflowStepId: centrality_measures
+            type: table
+            view: edges
+          - pageIoId: nodesCount
+            workflowIoId: nodesCount
+            workflowStepId: graph_properties
+          - pageIoId: edgesCount
+            workflowIoId: edgesCount
+            workflowStepId: graph_properties
+          - pageIoId: density
+            workflowIoId: density
+            workflowStepId: graph_properties
+          - pageIoId: averageDegree
+            workflowIoId: averageDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageInDegree
+            workflowIoId: averageInDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageOutDegree
+            workflowIoId: averageOutDegree
+            workflowStepId: graph_properties
+          - pageIoId: averageShortestPathLength
+            workflowIoId: averageShortestPathLength
+            workflowStepId: graph_properties
+      layout:
+        dataPreview:
+          - type: input
+            id: nodes
+meta:
+  label: Mock workflow

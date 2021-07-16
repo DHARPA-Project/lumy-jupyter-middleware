@@ -38,14 +38,14 @@ class ModuleIOHandler(MessageHandler):
         value, stats = self.context.get_step_input_value(
             msg.step_id, msg.input_id, msg.filter)
 
-        serialized_value, value_type = serialize(value)
+        serialized_value = serialize(value)
 
         return MsgModuleIOInputValue(
             step_id=msg.step_id,
             input_id=msg.input_id,
             filter=msg.filter,
-            value=serialized_value,
-            type=value_type.value,
+            value=serialized_value.value,
+            type=serialized_value.data_type.value,
             stats=to_dict(stats)
         )
 
@@ -56,14 +56,14 @@ class ModuleIOHandler(MessageHandler):
         value, stats = self.context.get_step_output_value(
             msg.step_id, msg.output_id, msg.filter)
 
-        serialized_value, value_type = serialize(value)
+        serialized_value = serialize(value)
 
         return MsgModuleIOOutputValue(
             step_id=msg.step_id,
             output_id=msg.output_id,
             filter=msg.filter,
-            value=serialized_value,
-            type=value_type.value,
+            value=serialized_value.value,
+            type=serialized_value.data_type.value,
             stats=to_dict(stats)
         )
 

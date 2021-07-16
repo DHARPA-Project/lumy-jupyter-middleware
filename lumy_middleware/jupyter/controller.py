@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
-import pyarrow as pa
 from ipykernel.comm import Comm
 from IPython import get_ipython
 from lumy_middleware import dev as dev_pkg
@@ -20,7 +19,6 @@ from lumy_middleware.jupyter.message_handlers import (ActivityHandler,
                                                       NotesHandler,
                                                       WorkflowMessageHandler)
 from lumy_middleware.types.generated import MsgError
-from lumy_middleware.utils.codec import serialize_table
 from lumy_middleware.utils.dataclasses import to_dict
 from lumy_middleware.utils.json import object_as_json
 
@@ -37,13 +35,11 @@ def preprocess_dict(d):
     def val(v):
         if isinstance(v, dict):
             return preprocess_dict(v)
-        elif isinstance(v, pa.Table):
-            return serialize_table(v)
         elif isinstance(v, list):
             return [val(i) for i in v]
+        elif isinstance(v, Enum):
+            return v.value
         else:
-            if isinstance(v, Enum):
-                return v.value
             return v
 
     return {
@@ -54,7 +50,7 @@ def preprocess_dict(d):
 
 def get_dev_workflow_path():
     return pathlib.Path(dev_pkg.__file__).parent / "resources" / \
-        "networkAnalysisWorkflow.yml"
+        "networkAnalysisWorkflowNew.yml"
 
 
 class IpythonKernelController(TargetPublisher):

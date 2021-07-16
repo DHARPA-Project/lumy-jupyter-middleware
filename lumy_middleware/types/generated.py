@@ -575,6 +575,35 @@ class LumyWorkflowMetadata:
     label: str
 
 
+@dataclass
+class DataTransformationItemPipelineDetails:
+    """Name of the Kiara pipeline to use."""
+    name: str
+
+
+@dataclass
+class DataTransformationDescriptor:
+    """Data type transformation method details."""
+    pipeline: DataTransformationItemPipelineDetails
+    """Name of source Kiara data type to apply transformation to."""
+    source_type: str
+    """Name of target Kiara data type to apply transformation to."""
+    target_type: str
+    """If set to 'true', this transformation will be used for this particular type by default if
+    more than one transformation is available and no view is provided.
+    """
+    default: Optional[bool] = None
+    """Name of the view which serves as an additional hint which transformation to choose if
+    there is more than one available
+    """
+    view: Optional[str] = None
+
+
+@dataclass
+class DataProcessingDetailsSection:
+    transformations: Optional[List[DataTransformationDescriptor]] = None
+
+
 class Modifier(Enum):
     """Version modifier"""
     EQ = "eq"
@@ -609,6 +638,7 @@ class ProcessingWorkflowSection:
 class ProcessingSection:
     """Workflow processing configuration details"""
     workflow: ProcessingWorkflowSection
+    data: Optional[DataProcessingDetailsSection] = None
     dependencies: Optional[ProcessingDependenciesSection] = None
 
 
@@ -647,6 +677,12 @@ class WorkflowPageMapping:
     page_io_id: str
     """ID of the input/output on the processing side"""
     workflow_io_id: str
+    """Specifies type the input is expected to be in.
+    A respective data transformation method will be used.
+    """
+    type: Optional[str] = None
+    """Name of the view transformation to use for the expected type."""
+    view: Optional[str] = None
     """ID of the step of the pipeline. If not provided, the input output is considered to be one
     of the pipeline input/outputs.
     """

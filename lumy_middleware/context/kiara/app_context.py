@@ -3,21 +3,23 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from lumy_middleware.context.context import AppContext, UpdatedIO
 from lumy_middleware.context.dataregistry import DataRegistry
+from lumy_middleware.context.kiara.data_transformation import (
+    get_reverse_transformation_method, get_transformation_method,
+    transform_value)
 from lumy_middleware.context.kiara.dataregistry import KiaraDataRegistry
-from lumy_middleware.context.kiara.table_utils import filter_table, sort_table
+from lumy_middleware.context.kiara.util.data import get_value_data
 from lumy_middleware.types.generated import (DataTabularDataFilter,
-                                             LumyWorkflow, State, TableStats)
+                                             LumyWorkflow, State)
 from lumy_middleware.utils.dataclasses import from_dict, from_yaml
-from pyarrow import Table
 
 from kiara import Kiara
-from kiara.data.values import DataValue, PipelineValue, Value
+from kiara.data.values import PipelineValue
 from kiara.defaults import SpecialValue
-from kiara.pipeline.controller import BatchController
+from kiara.pipeline.controller import PipelineController
 from kiara.workflow import KiaraWorkflow
 
 if TYPE_CHECKING:
@@ -29,38 +31,6 @@ logger = logging.getLogger(__name__)
 def is_default_value_acceptable(value: PipelineValue) -> bool:
     return value.value_schema.default is not None and \
         value.value_schema.default != SpecialValue.NOT_SET
-
-
-def get_value_data(
-    value: Value,
-    filter: Optional[DataTabularDataFilter]
-) -> Tuple[Any, Any]:
-    if not hasattr(value, 'get_value_data'):
-        raise Exception(
-            f'Don\'t know how to get value from class "{value.__class__}"')
-    actual_value = cast(DataValue, value).get_value_data()
-
-    # TODO: Type metadata is not in fully implemented in kiara yet
-    # When it is, replace isinstance check with metadata type check
-    if isinstance(actual_value, Table):
-        table: Table = actual_value
-        if filter is not None:
-            if filter.full_value:
-                table_stats = TableStats(rows_count=table.num_rows)
-                return (table, table_stats)
-            else:
-                filtered_table = filter_table(table, filter.condition)
-                sorted_table = sort_table(filtered_table, filter.sorting)
-                table_stats = TableStats(rows_count=sorted_table.num_rows)
-
-                offset = filter.offset or 0
-                page_size = filter.page_size or 5
-                table_page = sorted_table.slice(offset, page_size)
-                return (table_page, table_stats)
-
-        table_stats = TableStats(rows_count=table.num_rows)
-        return (None, table_stats)
-    return (actual_value, None)
 
 
 def get_pipeline_input_id(ids: List[str]) -> Optional[str]:
@@ -117,13 +87,14 @@ def build_reverse_io_mappings(
     return lookup
 
 
-class KiaraAppContext(AppContext, BatchController):
+class KiaraAppContext(AppContext, PipelineController):
     _workflow: Optional[LumyWorkflow]
     _kiara_workflow: Optional[KiaraWorkflow]
     _data_registry: DataRegistry
     _kiara = Kiara.instance()
     # kiara workflow step Id -> mappings
     _reverse_io_mappings: Dict[str, ReverseIoMappings]
+    _is_running = False
 
     def load_workflow(
         self,
@@ -158,7 +129,7 @@ class KiaraAppContext(AppContext, BatchController):
 
         # TODO: executing workflow right away for dev purposes only
         try:
-            self.execute_all_steps()
+            self.run_processing()
         except Exception:
             logger.debug('Could not execute steps on launch. It is fine.')
 
@@ -175,6 +146,12 @@ class KiaraAppContext(AppContext, BatchController):
         input_id: str,  # a page input ID
         filter: Optional[DataTabularDataFilter] = None
     ) -> Tuple[Any, Any]:
+        '''
+        Returns value transformed according to the rules.
+        '''
+        if self._workflow is None:
+            return (None, None)
+
         workflow_step_id, workflow_input_id = \
             self._get_workflow_input_id_for_page(
                 step_id, input_id) or (None, None)
@@ -190,6 +167,16 @@ class KiaraAppContext(AppContext, BatchController):
             return (None, None)
 
         value = self.get_step_input(workflow_step_id, workflow_input_id)
+        transformation_descriptor = get_transformation_method(
+            self._workflow,
+            step_id,
+            input_id,
+            is_input=True,
+            value=value
+        )
+        if transformation_descriptor is not None:
+            value = transform_value(
+                self._kiara, value, transformation_descriptor)
 
         return get_value_data(value, filter)
 
@@ -199,6 +186,9 @@ class KiaraAppContext(AppContext, BatchController):
         output_id: str,  # a page output ID
         filter: Optional[DataTabularDataFilter] = None
     ) -> Tuple[Any, Any]:
+        if self._workflow is None:
+            return (None, None)
+
         workflow_step_id, workflow_output_id = \
             self._get_workflow_output_id_for_page(
                 step_id, output_id) or (None, None)
@@ -214,6 +204,16 @@ class KiaraAppContext(AppContext, BatchController):
             return (None, None)
 
         value = self.get_step_output(workflow_step_id, workflow_output_id)
+        transformation_descriptor = get_transformation_method(
+            self._workflow,
+            step_id,
+            output_id,
+            is_input=False,
+            value=value
+        )
+        if transformation_descriptor is not None:
+            value = transform_value(
+                self._kiara, value, transformation_descriptor)
 
         return get_value_data(value, filter)
 
@@ -222,6 +222,9 @@ class KiaraAppContext(AppContext, BatchController):
         step_id: str,  # a page ID
         input_values: Optional[Dict[str, Any]]  # page input IDs
     ):
+        if self._workflow is None or self._kiara_workflow is None:
+            return
+
         updated_values = {}
 
         for input_id, value in (input_values or {}).items():
@@ -238,10 +241,21 @@ class KiaraAppContext(AppContext, BatchController):
                 input_connections[workflow_input_id])
 
             if pipeline_input_id is not None and value is not None:
-                if self._kiara_workflow is not None:
-                    self._kiara_workflow.inputs.set_value(
-                        pipeline_input_id, value)
-                    updated_values[input_id] = value
+                # 1. get reverse transformation descriptor
+                # 2. transform value
+                transformation_descriptor = get_reverse_transformation_method(
+                    self._workflow,
+                    step_id, input_id,
+                    is_input=True,
+                    value=self._kiara_workflow.inputs.get_value_obj(
+                        pipeline_input_id)
+                )
+                if transformation_descriptor is not None:
+                    value = transform_value(self._kiara, value,
+                                            transformation_descriptor)
+                updated_values[pipeline_input_id] = value
+
+        self._kiara_workflow.inputs.set_values(**updated_values)
 
     def run_processing(self, step_id: Optional[str] = None):
         try:
@@ -249,14 +263,9 @@ class KiaraAppContext(AppContext, BatchController):
             if step_id is not None:
                 self.process_step(step_id)
             else:
-                self.execute_all_steps()
+                self._process_pipeline(self.processing_stages[0] or [])
         finally:
             self.processing_state_changed.publish(State.IDLE)
-
-    def execute_all_steps(self):
-        for stage in self.processing_stages:
-            for step_id in stage:
-                self.process_step(step_id)
 
     def set_default_values(self):
         inputs = self.get_current_pipeline_state() \
@@ -272,11 +281,10 @@ class KiaraAppContext(AppContext, BatchController):
         '''
         PipelineController
         '''
-        super().step_inputs_changed(event)
-
         page_id_to_input_ids: Dict[str, List[str]] = defaultdict(list)
 
         for step_id, input_ids in event.updated_step_inputs.items():
+            self.run_processing(step_id)
             for input_id in input_ids:
                 for page_id, page_input_id in \
                     self._get_page_input_ids_for_workflow_input_id(
@@ -292,6 +300,9 @@ class KiaraAppContext(AppContext, BatchController):
         PipelineController
         '''
 
+        if self.pipeline_is_finished():
+            self._is_running = False
+
         page_id_to_output_ids: Dict[str, List[str]] = defaultdict(list)
 
         for step_id, output_ids in event.updated_step_outputs.items():
@@ -304,6 +315,29 @@ class KiaraAppContext(AppContext, BatchController):
         for page_id, output_ids in page_id_to_output_ids.items():
             msg = UpdatedIO(step_id=page_id, io_ids=output_ids)
             self.step_output_values_updated.publish(msg)
+
+    def _process_pipeline(self, steps_ids: List[str]):
+        if self._is_running:
+            logger.warn(
+                "Pipeline running, not starting pipeline processing now.")
+            raise Exception("Pipeline already running.")
+
+        if len(steps_ids) == 0:
+            return
+
+        self._is_running = True
+        try:
+            job_ids = [
+                self.process_step(step_id)
+                for step_id in steps_ids
+                if self.can_be_processed(step_id)
+                and not self.can_be_skipped(step_id)
+            ]
+            self._processor.wait_for(*job_ids)
+        except Exception:
+            logger.exception('Unexpected error while processing steps')
+        finally:
+            self._is_running = False
 
     @property
     def data_registry(self) -> DataRegistry:
