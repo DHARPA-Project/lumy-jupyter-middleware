@@ -569,6 +569,24 @@ class MsgWorkflowExecutionResult:
 
 
 @dataclass
+class Code:
+    """Actual JS code"""
+    content: str
+    """Unique ID of this code snippet"""
+    id: str
+
+
+@dataclass
+class MsgWorkflowPageComponentsCode:
+    """Target: "workflow"
+    Message type: "PageComponentsCode"
+    
+    Javascript code that renders pages of the workflow.
+    """
+    code: List[Code]
+
+
+@dataclass
 class LumyWorkflowMetadata:
     """Workflow metadata"""
     """Human readable name of the workflow."""
@@ -577,7 +595,9 @@ class LumyWorkflowMetadata:
 
 @dataclass
 class DataTransformationItemPipelineDetails:
-    """Name of the Kiara pipeline to use."""
+    """Name of the Kiara pipeline to use.
+    The pipeline must have one input: 'source' and one output: 'target'.
+    """
     name: str
 
 
@@ -647,6 +667,10 @@ class WorkflowPageComponent:
     """Details of the component that renders this page"""
     """ID of the component"""
     id: str
+    """URL of the package that contains this component.
+    NOTE: This will likely be removed once package dependencies support is implemented.
+    """
+    url: Optional[str] = None
 
 
 class InputOrOutput(Enum):
