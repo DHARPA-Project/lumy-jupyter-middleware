@@ -32,7 +32,8 @@ setup_args = dict(
         'kiara[all]==0.0.4',
         'kiara_modules.core==0.0.3',
         'pandas>=1.2.4',
-        'appdirs>=1.4.4'
+        'appdirs>=1.4.4',
+        'stevedore>=3.3.0'
     ],
     zip_safe=False,
     include_package_data=True,
