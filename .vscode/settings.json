@@ -8,7 +8,7 @@
   },
   "python.linting.enabled": true,
   "python.linting.lintOnSave": true,
-  "python.pythonPath": ".venv/bin/python",
+  "python.defaultInterpreterPath": ".venv/bin/python",
   "python.venvPath": ".venv",
   "python.linting.pylintPath": ".venv/bin/pylint",
   "python.linting.pylintArgs": [
