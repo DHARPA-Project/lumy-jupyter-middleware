@@ -1,10 +1,13 @@
 import logging
 
 from kiara.kiara import Kiara
+from lumy_middleware.context.kiara.page_components_code import \
+    get_specific_components_code
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types import MsgWorkflowUpdated
 from lumy_middleware.types.generated import (MsgWorkflowExecute,
                                              MsgWorkflowExecutionResult,
+                                             MsgWorkflowPageComponentsCode,
                                              Status)
 
 logger = logging.getLogger(__name__)
@@ -67,4 +70,10 @@ class WorkflowMessageHandler(MessageHandler):
                     error_message=str(e)
                 )
 
+        self.publisher.publish(response)
+
+    def _handle_GetPageComponentsCode(self):
+        code = [] if self._context.current_workflow is None \
+            else get_specific_components_code(self._context.current_workflow)
+        response = MsgWorkflowPageComponentsCode(code=code)
         self.publisher.publish(response)

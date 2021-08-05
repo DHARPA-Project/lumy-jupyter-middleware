@@ -18,6 +18,8 @@ ui:
     - id: dataSelection
       component:
         id: dataSelection
+        # url: file://../codename_vre/packages/modules/dist/index.js
+        url: lumymodule://network_analysis_ui
       meta:
         label: Data Selection
       mapping:
@@ -28,6 +30,8 @@ ui:
     - id: dataMapping
       component:
         id: networkAnalysisDataMapping
+        # url: file://../codename_vre/packages/modules/dist/index.js
+        url: lumymodule://network_analysis_ui
       meta:
         label: Data mapping
       mapping:
@@ -44,6 +48,8 @@ ui:
     - id: datavis
       component:
         id: networkAnalysisDataVis
+        # url: file://../codename_vre/packages/modules/dist/index.js
+        url: lumymodule://network_analysis_ui
       meta:
         label: Data visusalisation
       mapping:

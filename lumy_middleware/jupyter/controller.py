@@ -145,6 +145,8 @@ class IpythonKernelController(TargetPublisher):
         comm = self._comms[target]
         ready_msg = preprocess_dict(to_dict(msg))
         msg_str = json.dumps(ready_msg)
+        if len(msg_str) > 1000:
+            msg_str = msg_str[0:997] + '...'
         logger.debug(
             f'Message published on "{target}": {msg_str}')
         comm.send(ready_msg)
