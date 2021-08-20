@@ -569,6 +569,17 @@ class MsgWorkflowExecutionResult:
 
 
 @dataclass
+class MsgWorkflowGetWorkflowList:
+    """Target: "workflow"
+    Message type: "GetWorkflowList"
+    
+    Request a list of workflows available for the user.
+    """
+    """If set to true, include workflow body."""
+    include_workflow: Optional[bool] = None
+
+
+@dataclass
 class LumyWorkflowMetadata:
     """Workflow metadata"""
     """Human readable name of the workflow."""
@@ -809,6 +820,25 @@ class MsgWorkflowUpdated:
     Workflow currently loaded into the app.
     """
     workflow: Optional[LumyWorkflow] = None
+
+
+@dataclass
+class WorkflowListItem:
+    """Workflow name"""
+    name: str
+    """URI of the workflow (file path or URL)."""
+    uri: str
+    body: Optional[LumyWorkflow] = None
+
+
+@dataclass
+class MsgWorkflowWorkflowList:
+    """Target: "workflow"
+    Message type: "WorkflowList"
+    
+    A list of workflows available for the user.
+    """
+    workflows: List[WorkflowListItem]
 
 
 @dataclass

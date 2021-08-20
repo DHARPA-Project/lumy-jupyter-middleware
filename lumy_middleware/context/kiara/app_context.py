@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -16,7 +15,7 @@ from lumy_middleware.context.kiara.util.data import get_value_data
 from lumy_middleware.types.generated import (
     DataTabularDataFilter, LumyWorkflow, MsgWorkflowLumyWorkflowLoadProgress,
     MsgWorkflowLumyWorkflowLoadProgressStatus, State, TypeEnum)
-from lumy_middleware.utils.dataclasses import from_dict, from_yaml
+from lumy_middleware.utils.lumy import load_lumy_workflow_from_file
 from lumy_middleware.utils.workflow import install_dependencies
 
 from kiara import Kiara
@@ -43,12 +42,6 @@ def get_pipeline_input_id(ids: List[str]) -> Optional[str]:
         if parts[0] == '__pipeline__':
             return parts[1]
     return None
-
-
-def load_lumy_workflow_from_file(path: Path) -> LumyWorkflow:
-    if path.suffix in ['.yml', '.yaml']:
-        return from_yaml(LumyWorkflow, path.read_text())
-    return from_dict(LumyWorkflow, json.loads(path.read_text()))
 
 
 @dataclass
@@ -98,6 +91,7 @@ class KiaraAppContext(AppContext, PipelineController):
     # kiara workflow step Id -> mappings
     _reverse_io_mappings: Dict[str, ReverseIoMappings]
     _is_running = False
+    _is_loading_workflow = False
 
     def load_workflow(
         self,
@@ -106,82 +100,104 @@ class KiaraAppContext(AppContext, PipelineController):
         '''
         AppContext
         '''
-
-        if isinstance(workflow_path_or_content, Path):
-            workflow_path_or_content = load_lumy_workflow_from_file(
-                workflow_path_or_content)
-
-        workflow = workflow_path_or_content
-
-        kiara_workflow_name = workflow_path_or_content.processing.workflow.name
-
-        # Install processing dependencies
-        if workflow.processing.dependencies is not None:
-            packages = workflow.processing.dependencies.python_packages or []
-            for installed_dependency in install_dependencies(packages):
-                yield MsgWorkflowLumyWorkflowLoadProgress(
-                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
-                    type=TypeEnum.INFO,
-                    message=(f'Installed processing dependency'
-                             f': {installed_dependency.name}')
-                )
-
-        # Install UI dependencies
-        if workflow.ui.dependencies is not None:
-            packages = workflow.ui.dependencies.python_packages or []
-            for installed_dependency in install_dependencies(packages):
-                yield MsgWorkflowLumyWorkflowLoadProgress(
-                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
-                    type=TypeEnum.INFO,
-                    message=(f'Installed UI dependency'
-                             f': {installed_dependency.name}')
-                )
-
-        self._kiara_workflow = self._kiara.create_workflow(
-            kiara_workflow_name,
-            controller=self
-        )
-
-        yield MsgWorkflowLumyWorkflowLoadProgress(
-            status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
-            type=TypeEnum.INFO,
-            message='Loaded workflow'
-        )
-
-        self._data_registry = KiaraDataRegistry(self._kiara)
-        # self._data_registry = MockDataRegistry()
-
-        # TODO: access the pipeline here because it is lazily created
-        # in the getter. If not done, any code later accessing pipeline in
-        # a different way will fail.
-        if self._kiara_workflow:
-            self._kiara_workflow.pipeline
-
-        self._workflow = workflow_path_or_content
-        self._reverse_io_mappings = build_reverse_io_mappings(self._workflow)
-
-        yield MsgWorkflowLumyWorkflowLoadProgress(
-            status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
-            type=TypeEnum.INFO,
-            message='Executing workflow'
-        )
-
-        # TODO: executing workflow right away for dev purposes only
         try:
-            self.run_processing()
+            if self._is_loading_workflow:
+                msg = 'Another workflow is being loaded.'
+                yield MsgWorkflowLumyWorkflowLoadProgress(
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
+                    type=TypeEnum.ERROR,
+                    message=msg
+                )
+                raise Exception(msg)
+
+            self._is_loading_workflow = True
+            if isinstance(workflow_path_or_content, Path):
+                workflow_path_or_content = load_lumy_workflow_from_file(
+                    workflow_path_or_content)
+
+            workflow = workflow_path_or_content
+
+            kiara_workflow_name = workflow_path_or_content.processing \
+                .workflow.name
+
+            # Install processing dependencies
+            if workflow.processing.dependencies is not None:
+                packages = workflow.processing\
+                    .dependencies.python_packages or []
+                for installed_dependency in install_dependencies(packages):
+                    yield MsgWorkflowLumyWorkflowLoadProgress(
+                        status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                        .LOADING,
+                        type=TypeEnum.INFO,
+                        message=(f'Installed processing dependency'
+                                 f': {installed_dependency.name}')
+                    )
+
+            # Install UI dependencies
+            if workflow.ui.dependencies is not None:
+                packages = workflow.ui.dependencies.python_packages or []
+                for installed_dependency in install_dependencies(packages):
+                    yield MsgWorkflowLumyWorkflowLoadProgress(
+                        status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                        .LOADING,
+                        type=TypeEnum.INFO,
+                        message=(f'Installed UI dependency'
+                                 f': {installed_dependency.name}')
+                    )
+
+            self._kiara_workflow = self._kiara.create_workflow(
+                kiara_workflow_name,
+                controller=self
+            )
 
             yield MsgWorkflowLumyWorkflowLoadProgress(
-                status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADED,
+                status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
                 type=TypeEnum.INFO,
-                message='Executed workflow'
+                message='Loaded workflow'
             )
-        except Exception:
-            logger.debug('Could not execute steps on launch. It is fine.')
+
+            self._data_registry = KiaraDataRegistry(self._kiara)
+            # self._data_registry = MockDataRegistry()
+
+            # TODO: access the pipeline here because it is lazily created
+            # in the getter. If not done, any code later accessing pipeline in
+            # a different way will fail.
+            if self._kiara_workflow:
+                try:
+                    self._kiara_workflow.pipeline
+                except Exception:
+                    # TODO: if a new workflow is set, this call
+                    # raises an exception. Can we ignore it?
+                    pass
+
+            self._workflow = workflow_path_or_content
+            self._reverse_io_mappings = build_reverse_io_mappings(
+                self._workflow)
+
             yield MsgWorkflowLumyWorkflowLoadProgress(
-                status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADED,
-                type=TypeEnum.ERROR,
-                message='Could not execute steps on launch'
+                status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
+                type=TypeEnum.INFO,
+                message='Executing workflow'
             )
+
+            # TODO: executing workflow right away for dev purposes only
+            try:
+                self.run_processing()
+
+                yield MsgWorkflowLumyWorkflowLoadProgress(
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADED,
+                    type=TypeEnum.INFO,
+                    message='Executed workflow'
+                )
+            except Exception:
+                logger.debug('Could not execute steps on launch. It is fine.')
+                yield MsgWorkflowLumyWorkflowLoadProgress(
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADED,
+                    type=TypeEnum.ERROR,
+                    message='Could not execute steps on launch'
+                )
+        finally:
+            self._is_loading_workflow = False
 
     @property
     def current_workflow(self) -> Optional[LumyWorkflow]:

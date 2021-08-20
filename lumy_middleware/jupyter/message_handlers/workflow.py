@@ -1,16 +1,21 @@
 import logging
+from typing import Dict, cast
 
 from kiara.kiara import Kiara
 from lumy_middleware.context.kiara.page_components_code import \
     get_specific_components_code
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types import MsgWorkflowUpdated
-from lumy_middleware.types.generated import (MsgWorkflowExecute,
+from lumy_middleware.types.generated import (LumyWorkflow, MsgWorkflowExecute,
                                              MsgWorkflowExecutionResult)
 from lumy_middleware.types.generated import \
     MsgWorkflowExecutionResultStatus as Status
-from lumy_middleware.types.generated import (MsgWorkflowLoadLumyWorkflow,
-                                             MsgWorkflowPageComponentsCode)
+from lumy_middleware.types.generated import (MsgWorkflowGetWorkflowList,
+                                             MsgWorkflowLoadLumyWorkflow,
+                                             MsgWorkflowPageComponentsCode,
+                                             MsgWorkflowWorkflowList)
+from lumy_middleware.utils.dataclasses import from_dict
+from lumy_middleware.utils.lumy import get_workflows
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +31,22 @@ class WorkflowMessageHandler(MessageHandler):
             else self._context.current_workflow
         ))
 
-    def _handle_LoadWorkflow(self, msg: MsgWorkflowLoadLumyWorkflow):
+    def _handle_LoadLumyWorkflow(self, msg: MsgWorkflowLoadLumyWorkflow):
         '''
         Load a workflow:
             - install dependencies
             - set workflow as current
         '''
-        for status_update in self.context.load_workflow(msg.workflow):
+        workflow = msg.workflow
+        if not isinstance(workflow, str):
+            workflow = from_dict(LumyWorkflow, cast(Dict, workflow))
+        for status_update in self.context.load_workflow(workflow):
             self.publisher.publish(status_update)
+
+    def _handle_GetWorkflowList(self, msg: MsgWorkflowGetWorkflowList):
+        self.publisher.publish(MsgWorkflowWorkflowList(
+            workflows=list(get_workflows(msg.include_workflow or False))
+        ))
 
     def _handle_Execute(self, msg: MsgWorkflowExecute):
         # TODO: This can be better encapsulated into context
