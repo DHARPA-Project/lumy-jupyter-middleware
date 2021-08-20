@@ -547,7 +547,7 @@ class MsgWorkflowExecute:
     workflow_id: Optional[str] = None
 
 
-class Status(Enum):
+class MsgWorkflowExecutionResultStatus(Enum):
     ERROR = "error"
     OK = "ok"
 
@@ -561,29 +561,11 @@ class MsgWorkflowExecutionResult:
     """
     """A unique ID representing the execution request. Set in `Execute` message."""
     request_id: str
-    status: Status
+    status: MsgWorkflowExecutionResultStatus
     """Error message when status is 'error'."""
     error_message: Optional[str] = None
     """Result of the execution. Structure depends on the workflow. TBD."""
     result: Optional[Dict[str, Any]] = None
-
-
-@dataclass
-class Code:
-    """Actual JS code"""
-    content: str
-    """Unique ID of this code snippet"""
-    id: str
-
-
-@dataclass
-class MsgWorkflowPageComponentsCode:
-    """Target: "workflow"
-    Message type: "PageComponentsCode"
-    
-    Javascript code that renders pages of the workflow.
-    """
-    code: List[Code]
 
 
 @dataclass
@@ -764,6 +746,62 @@ class LumyWorkflow:
 
 
 @dataclass
+class MsgWorkflowLoadLumyWorkflow:
+    """Target: "workflow"
+    Message type: "LoadLumyWorkflow"
+    
+    Load a Lumy workflow.
+    """
+    """A path to the workflow or the whole workflow structure"""
+    workflow: Union[LumyWorkflow, str]
+
+
+class MsgWorkflowLumyWorkflowLoadProgressStatus(Enum):
+    """Status of the process"""
+    LOADED = "loaded"
+    LOADING = "loading"
+
+
+class TypeEnum(Enum):
+    """Message type"""
+    ERROR = "error"
+    INFO = "info"
+
+
+@dataclass
+class MsgWorkflowLumyWorkflowLoadProgress:
+    """Target: "workflow"
+    Message type: "LumyWorkflowLoadProgress"
+    
+    Progress status updates published when a Lumy workflow is being loaded.
+    This is mostly needed to publish updates about installed dependencies
+    """
+    message: str
+    """Status of the process"""
+    status: MsgWorkflowLumyWorkflowLoadProgressStatus
+    """Message type"""
+    type: TypeEnum
+
+
+@dataclass
+class Code:
+    """Actual JS code"""
+    content: str
+    """Unique ID of this code snippet"""
+    id: str
+
+
+@dataclass
+class MsgWorkflowPageComponentsCode:
+    """Target: "workflow"
+    Message type: "PageComponentsCode"
+    
+    Javascript code that renders pages of the workflow.
+    """
+    code: List[Code]
+
+
+@dataclass
 class MsgWorkflowUpdated:
     """Target: "workflow"
     Message type: "Updated"
@@ -801,7 +839,9 @@ class WorkflowIOState:
 
 @dataclass
 class WorkflowStep:
-    """A single Workflow step."""
+    """NOTE: deprecated, will be removed.
+    A single Workflow step.
+    """
     """Unique ID of the step within the workflow."""
     id: str
     """State of module inputs of the step. Key is stepId."""
@@ -816,6 +856,7 @@ class WorkflowStep:
 class WorkflowStructure:
     """Modular structure of the workflow.
     
+    NOTE: deprecated, will be removed.
     Workflow structure. Contains all modules that are a part of the workflow.
     """
     """Steps of the workflow."""
@@ -824,7 +865,9 @@ class WorkflowStructure:
 
 @dataclass
 class Workflow:
-    """Represents a workflow."""
+    """NOTE: deprecated, will be removed.
+    Represents a workflow.
+    """
     """Unique ID of the workflow."""
     id: str
     """Human readable name of the workflow."""

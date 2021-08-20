@@ -24,6 +24,14 @@ class WorkflowMessageHandler(MessageHandler):
             else self._context.current_workflow
         ))
 
+    def _handle_LoadWorkflow(self):
+        '''
+        Load a workflow:
+            - install dependencies
+            - set workflow as current
+        '''
+        pass
+
     def _handle_Execute(self, msg: MsgWorkflowExecute):
         # TODO: This can be better encapsulated into context
         kiara: Kiara = getattr(self.context, '_kiara', None)
