@@ -35,8 +35,6 @@ setup_args = dict(
         'pandas>=1.2.4',
         'appdirs>=1.4.4',
         'stevedore>=3.3.0',
-        # will be installed dynamically later
-        'lumy-modules.network-analysis==0.1.0'
     ],
     zip_safe=False,
     include_package_data=True,
