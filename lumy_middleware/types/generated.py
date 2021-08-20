@@ -624,23 +624,13 @@ class DataProcessingDetailsSection:
     transformations: Optional[List[DataTransformationDescriptor]] = None
 
 
-class Modifier(Enum):
-    """Version modifier"""
-    EQ = "eq"
-    GT = "gt"
-    GTE = "gte"
-    LT = "lt"
-    LTE = "lte"
-
-
 @dataclass
 class PackageDependency:
-    """Package name"""
+    """Python package dependency."""
+    """Package name as a PEP508 string (https://www.python.org/dev/peps/pep-0508/). The standard
+    pip requirement string.
+    """
     name: str
-    """Version modifier"""
-    modifier: Optional[Modifier] = None
-    """Package version"""
-    version: Optional[str] = None
 
 
 @dataclass
@@ -660,6 +650,11 @@ class ProcessingSection:
     workflow: ProcessingWorkflowSection
     data: Optional[DataProcessingDetailsSection] = None
     dependencies: Optional[ProcessingDependenciesSection] = None
+
+
+@dataclass
+class UIDependenciesSection:
+    python_packages: Optional[List[PackageDependency]] = None
 
 
 @dataclass
@@ -749,6 +744,7 @@ class WorkflowPageDetails:
 @dataclass
 class RenderingSection:
     """Workflow rendering definitions"""
+    dependencies: Optional[UIDependenciesSection] = None
     """List of pages that comprise the workflow UI part."""
     pages: Optional[List[WorkflowPageDetails]] = None
 
