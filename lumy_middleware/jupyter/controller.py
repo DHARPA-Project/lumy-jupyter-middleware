@@ -76,7 +76,8 @@ class IpythonKernelController(TargetPublisher):
     def __init__(self):
         super().__init__()
         context = KiaraAppContext()
-        context.load_workflow(get_dev_workflow_path())
+        for _ in context.load_workflow(get_dev_workflow_path()):
+            pass
         self._context = context
 
         self._handlers = {

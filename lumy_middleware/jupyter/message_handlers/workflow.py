@@ -6,9 +6,11 @@ from lumy_middleware.context.kiara.page_components_code import \
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types import MsgWorkflowUpdated
 from lumy_middleware.types.generated import (MsgWorkflowExecute,
-                                             MsgWorkflowExecutionResult,
-                                             MsgWorkflowPageComponentsCode,
-                                             Status)
+                                             MsgWorkflowExecutionResult)
+from lumy_middleware.types.generated import \
+    MsgWorkflowExecutionResultStatus as Status
+from lumy_middleware.types.generated import (MsgWorkflowLoadLumyWorkflow,
+                                             MsgWorkflowPageComponentsCode)
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +26,14 @@ class WorkflowMessageHandler(MessageHandler):
             else self._context.current_workflow
         ))
 
-    def _handle_LoadWorkflow(self):
+    def _handle_LoadWorkflow(self, msg: MsgWorkflowLoadLumyWorkflow):
         '''
         Load a workflow:
             - install dependencies
             - set workflow as current
         '''
-        pass
+        for status_update in self.context.load_workflow(msg.workflow):
+            self.publisher.publish(status_update)
 
     def _handle_Execute(self, msg: MsgWorkflowExecute):
         # TODO: This can be better encapsulated into context
