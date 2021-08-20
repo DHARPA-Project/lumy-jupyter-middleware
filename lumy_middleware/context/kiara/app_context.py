@@ -120,30 +120,38 @@ class KiaraAppContext(AppContext, PipelineController):
             kiara_workflow_name = workflow_path_or_content.processing \
                 .workflow.name
 
-            # Install processing dependencies
-            if workflow.processing.dependencies is not None:
-                packages = workflow.processing\
-                    .dependencies.python_packages or []
-                for installed_dependency in install_dependencies(packages):
-                    yield MsgWorkflowLumyWorkflowLoadProgress(
-                        status=MsgWorkflowLumyWorkflowLoadProgressStatus
-                        .LOADING,
-                        type=TypeEnum.INFO,
-                        message=(f'Installed processing dependency'
-                                 f': {installed_dependency.name}')
-                    )
+            try:
+                # Install processing dependencies
+                if workflow.processing.dependencies is not None:
+                    packages = workflow.processing\
+                        .dependencies.python_packages or []
+                    for installed_dependency in install_dependencies(packages):
+                        yield MsgWorkflowLumyWorkflowLoadProgress(
+                            status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                            .LOADING,
+                            type=TypeEnum.INFO,
+                            message=(f'Installed processing dependency'
+                                     f': {installed_dependency.name}')
+                        )
 
-            # Install UI dependencies
-            if workflow.ui.dependencies is not None:
-                packages = workflow.ui.dependencies.python_packages or []
-                for installed_dependency in install_dependencies(packages):
-                    yield MsgWorkflowLumyWorkflowLoadProgress(
-                        status=MsgWorkflowLumyWorkflowLoadProgressStatus
-                        .LOADING,
-                        type=TypeEnum.INFO,
-                        message=(f'Installed UI dependency'
-                                 f': {installed_dependency.name}')
-                    )
+                # Install UI dependencies
+                if workflow.ui.dependencies is not None:
+                    packages = workflow.ui.dependencies.python_packages or []
+                    for installed_dependency in install_dependencies(packages):
+                        yield MsgWorkflowLumyWorkflowLoadProgress(
+                            status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                            .LOADING,
+                            type=TypeEnum.INFO,
+                            message=(f'Installed UI dependency'
+                                     f': {installed_dependency.name}')
+                        )
+            except Exception as e:
+                yield MsgWorkflowLumyWorkflowLoadProgress(
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
+                    type=TypeEnum.ERROR,
+                    message=f'Could not install dependencies: {e}'
+                )
+                raise e
 
             self._kiara_workflow = self._kiara.create_workflow(
                 kiara_workflow_name,
