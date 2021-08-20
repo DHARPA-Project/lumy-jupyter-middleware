@@ -121,6 +121,13 @@ class KiaraAppContext(AppContext, PipelineController):
                 .workflow.name
 
             try:
+                yield MsgWorkflowLumyWorkflowLoadProgress(
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                    .LOADING,
+                    type=TypeEnum.INFO,
+                    message='Installing dependencies'
+                )
+
                 # Install processing dependencies
                 if workflow.processing.dependencies is not None:
                     packages = workflow.processing\
@@ -149,7 +156,7 @@ class KiaraAppContext(AppContext, PipelineController):
                 yield MsgWorkflowLumyWorkflowLoadProgress(
                     status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
                     type=TypeEnum.ERROR,
-                    message=f'Could not install dependencies: {e}'
+                    message=str(e)
                 )
                 raise e
 
