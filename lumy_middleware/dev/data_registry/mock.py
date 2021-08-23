@@ -120,9 +120,6 @@ class MockValue(Value):
     def get_value_data(self) -> Any:
         return self._data
 
-    def get_value_hash(self) -> str:
-        return str(self.value_hash)
-
 
 class MockDataRegistry(DataRegistry[MockValue]):
     __instance = None
