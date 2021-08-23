@@ -1,6 +1,6 @@
 processing:
   workflow:
-    name: lumydev.networkAnalysisDevNew
+    name: lumydev.pipelines.networkAnalysisDevNew
   dependencies:
     pythonPackages:
       - name: lumy-middleware>=0.3.8
@@ -72,25 +72,25 @@ ui:
             type: table
             view: edges
           - pageIoId: nodesCount
-            workflowIoId: nodesCount
+            workflowIoId: number_of_nodes
             workflowStepId: graph_properties
           - pageIoId: edgesCount
-            workflowIoId: edgesCount
+            workflowIoId: number_of_edges
             workflowStepId: graph_properties
           - pageIoId: density
             workflowIoId: density
             workflowStepId: graph_properties
           - pageIoId: averageDegree
-            workflowIoId: averageDegree
+            workflowIoId: average_degree
             workflowStepId: graph_properties
           - pageIoId: averageInDegree
-            workflowIoId: averageInDegree
+            workflowIoId: average_in_degree
             workflowStepId: graph_properties
           - pageIoId: averageOutDegree
-            workflowIoId: averageOutDegree
+            workflowIoId: average_out_degree
             workflowStepId: graph_properties
           - pageIoId: averageShortestPathLength
-            workflowIoId: averageShortestPathLength
+            workflowIoId: average_shortest_path_length
             workflowStepId: graph_properties
       layout:
         dataPreview:

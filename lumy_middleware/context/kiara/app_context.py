@@ -19,10 +19,10 @@ from lumy_middleware.utils.lumy import load_lumy_workflow_from_file
 from lumy_middleware.utils.workflow import install_dependencies
 
 from kiara import Kiara
-from kiara.data.values import PipelineValue
+from kiara.data.values import Value
 from kiara.defaults import SpecialValue
 from kiara.pipeline.controller import PipelineController
-from kiara.workflow import KiaraWorkflow
+from kiara.workflow.kiara_workflow import KiaraWorkflow
 
 if TYPE_CHECKING:
     from kiara.events import StepInputEvent, StepOutputEvent
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def is_default_value_acceptable(value: PipelineValue) -> bool:
+def is_default_value_acceptable(value: Value) -> bool:
     return value.value_schema.default is not None and \
         value.value_schema.default != SpecialValue.NOT_SET
 
