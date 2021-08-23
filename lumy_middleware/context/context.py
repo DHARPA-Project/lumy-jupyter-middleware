@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from lumy_middleware.context.dataregistry import DataRegistry
 from lumy_middleware.types import State
-from lumy_middleware.types.generated import DataTabularDataFilter, LumyWorkflow
+from lumy_middleware.types.generated import (
+    DataTabularDataFilter, LumyWorkflow, MsgWorkflowLumyWorkflowLoadProgress)
 from tinypubsub.simple import SimplePublisher
 
 
@@ -31,12 +32,17 @@ class AppContext(ABC):
     def load_workflow(
         self,
         workflow_path_or_content: Union[Path, LumyWorkflow]
-    ) -> None:
+    ) -> Iterator[MsgWorkflowLumyWorkflowLoadProgress]:
         '''
         Load workflow and set it as the current workflow.
-        A synchronous method which should raise an exception if
-        something goes wrong. When the method returns - the workflow
-        is ready to use.
+
+        The method is a generator that goes through different
+        stages of loading a workflow: discovering the workflow,
+        installing dependencies, etc.
+
+        The workflow is loaded when the generator is exhausted.
+        The method should raise an exception if something goes wrong.
+        When the iterator is exhausted, the workflow is ready to use.
         '''
         ...
 

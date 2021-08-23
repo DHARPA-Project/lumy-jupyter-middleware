@@ -547,7 +547,7 @@ class MsgWorkflowExecute:
     workflow_id: Optional[str] = None
 
 
-class Status(Enum):
+class MsgWorkflowExecutionResultStatus(Enum):
     ERROR = "error"
     OK = "ok"
 
@@ -561,7 +561,7 @@ class MsgWorkflowExecutionResult:
     """
     """A unique ID representing the execution request. Set in `Execute` message."""
     request_id: str
-    status: Status
+    status: MsgWorkflowExecutionResultStatus
     """Error message when status is 'error'."""
     error_message: Optional[str] = None
     """Result of the execution. Structure depends on the workflow. TBD."""
@@ -569,21 +569,14 @@ class MsgWorkflowExecutionResult:
 
 
 @dataclass
-class Code:
-    """Actual JS code"""
-    content: str
-    """Unique ID of this code snippet"""
-    id: str
-
-
-@dataclass
-class MsgWorkflowPageComponentsCode:
+class MsgWorkflowGetWorkflowList:
     """Target: "workflow"
-    Message type: "PageComponentsCode"
+    Message type: "GetWorkflowList"
     
-    Javascript code that renders pages of the workflow.
+    Request a list of workflows available for the user.
     """
-    code: List[Code]
+    """If set to true, include workflow body."""
+    include_workflow: Optional[bool] = None
 
 
 @dataclass
@@ -624,23 +617,13 @@ class DataProcessingDetailsSection:
     transformations: Optional[List[DataTransformationDescriptor]] = None
 
 
-class Modifier(Enum):
-    """Version modifier"""
-    EQ = "eq"
-    GT = "gt"
-    GTE = "gte"
-    LT = "lt"
-    LTE = "lte"
-
-
 @dataclass
 class PackageDependency:
-    """Package name"""
+    """Python package dependency."""
+    """Package name as a PEP508 string (https://www.python.org/dev/peps/pep-0508/). The standard
+    pip requirement string.
+    """
     name: str
-    """Version modifier"""
-    modifier: Optional[Modifier] = None
-    """Package version"""
-    version: Optional[str] = None
 
 
 @dataclass
@@ -660,6 +643,11 @@ class ProcessingSection:
     workflow: ProcessingWorkflowSection
     data: Optional[DataProcessingDetailsSection] = None
     dependencies: Optional[ProcessingDependenciesSection] = None
+
+
+@dataclass
+class UIDependenciesSection:
+    python_packages: Optional[List[PackageDependency]] = None
 
 
 @dataclass
@@ -749,6 +737,7 @@ class WorkflowPageDetails:
 @dataclass
 class RenderingSection:
     """Workflow rendering definitions"""
+    dependencies: Optional[UIDependenciesSection] = None
     """List of pages that comprise the workflow UI part."""
     pages: Optional[List[WorkflowPageDetails]] = None
 
@@ -768,6 +757,62 @@ class LumyWorkflow:
 
 
 @dataclass
+class MsgWorkflowLoadLumyWorkflow:
+    """Target: "workflow"
+    Message type: "LoadLumyWorkflow"
+    
+    Load a Lumy workflow.
+    """
+    """A path to the workflow or the whole workflow structure"""
+    workflow: Union[LumyWorkflow, str]
+
+
+class MsgWorkflowLumyWorkflowLoadProgressStatus(Enum):
+    """Status of the process"""
+    LOADED = "loaded"
+    LOADING = "loading"
+
+
+class TypeEnum(Enum):
+    """Message type"""
+    ERROR = "error"
+    INFO = "info"
+
+
+@dataclass
+class MsgWorkflowLumyWorkflowLoadProgress:
+    """Target: "workflow"
+    Message type: "LumyWorkflowLoadProgress"
+    
+    Progress status updates published when a Lumy workflow is being loaded.
+    This is mostly needed to publish updates about installed dependencies
+    """
+    message: str
+    """Status of the process"""
+    status: MsgWorkflowLumyWorkflowLoadProgressStatus
+    """Message type"""
+    type: TypeEnum
+
+
+@dataclass
+class Code:
+    """Actual JS code"""
+    content: str
+    """Unique ID of this code snippet"""
+    id: str
+
+
+@dataclass
+class MsgWorkflowPageComponentsCode:
+    """Target: "workflow"
+    Message type: "PageComponentsCode"
+    
+    Javascript code that renders pages of the workflow.
+    """
+    code: List[Code]
+
+
+@dataclass
 class MsgWorkflowUpdated:
     """Target: "workflow"
     Message type: "Updated"
@@ -775,6 +820,25 @@ class MsgWorkflowUpdated:
     Workflow currently loaded into the app.
     """
     workflow: Optional[LumyWorkflow] = None
+
+
+@dataclass
+class WorkflowListItem:
+    """Workflow name"""
+    name: str
+    """URI of the workflow (file path or URL)."""
+    uri: str
+    body: Optional[LumyWorkflow] = None
+
+
+@dataclass
+class MsgWorkflowWorkflowList:
+    """Target: "workflow"
+    Message type: "WorkflowList"
+    
+    A list of workflows available for the user.
+    """
+    workflows: List[WorkflowListItem]
 
 
 @dataclass
@@ -805,7 +869,9 @@ class WorkflowIOState:
 
 @dataclass
 class WorkflowStep:
-    """A single Workflow step."""
+    """NOTE: deprecated, will be removed.
+    A single Workflow step.
+    """
     """Unique ID of the step within the workflow."""
     id: str
     """State of module inputs of the step. Key is stepId."""
@@ -820,6 +886,7 @@ class WorkflowStep:
 class WorkflowStructure:
     """Modular structure of the workflow.
     
+    NOTE: deprecated, will be removed.
     Workflow structure. Contains all modules that are a part of the workflow.
     """
     """Steps of the workflow."""
@@ -828,7 +895,9 @@ class WorkflowStructure:
 
 @dataclass
 class Workflow:
-    """Represents a workflow."""
+    """NOTE: deprecated, will be removed.
+    Represents a workflow.
+    """
     """Unique ID of the workflow."""
     id: str
     """Human readable name of the workflow."""

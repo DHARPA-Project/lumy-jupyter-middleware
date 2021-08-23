@@ -1,6 +1,9 @@
 processing:
   workflow:
     name: lumydev.networkAnalysisDevNew
+  dependencies:
+    pythonPackages:
+      - name: lumy-middleware>=0.3.8
   data:
     transformations:
       - sourceType: network_graph
@@ -14,6 +17,9 @@ processing:
         pipeline:
           name: lumydev.graph_transformation.to_edges_table
 ui:
+  dependencies:
+    pythonPackages:
+      - name: lumy-modules.network-analysis==0.1.0
   pages:
     - id: dataSelection
       component:
@@ -91,4 +97,4 @@ ui:
           - type: input
             id: nodes
 meta:
-  label: Mock workflow
+  label: Network Analysis

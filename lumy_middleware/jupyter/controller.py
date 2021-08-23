@@ -1,6 +1,5 @@
 import json
 import logging
-import pathlib
 import sys
 from enum import Enum
 from typing import Any, Dict, Optional
@@ -8,7 +7,6 @@ from uuid import uuid4
 
 from ipykernel.comm import Comm
 from IPython import get_ipython
-from lumy_middleware import dev as dev_pkg
 from lumy_middleware.context.context import AppContext
 from lumy_middleware.context.kiara.app_context import KiaraAppContext
 from lumy_middleware.jupyter.base import (MessageEnvelope, MessageHandler,
@@ -48,11 +46,6 @@ def preprocess_dict(d):
     }
 
 
-def get_dev_workflow_path():
-    return pathlib.Path(dev_pkg.__file__).parent / "resources" / \
-        "networkAnalysisWorkflowNew.yml"
-
-
 class IpythonKernelController(TargetPublisher):
     __instance = None
 
@@ -76,7 +69,6 @@ class IpythonKernelController(TargetPublisher):
     def __init__(self):
         super().__init__()
         context = KiaraAppContext()
-        context.load_workflow(get_dev_workflow_path())
         self._context = context
 
         self._handlers = {
