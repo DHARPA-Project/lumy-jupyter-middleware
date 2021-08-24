@@ -1,0 +1,36 @@
+{
+  "$schema": "https://dharpa.org/kiara/development/entities/modules/PipelineModuleConfig.json",
+  "module_type_name": "table_from_file",
+  "steps": [
+    {
+      "module_type": "lumydev.table.local_file",
+      "step_id": "read_file"
+    },
+    {
+      "module_type": "lumydev.table.create_from_file",
+      "step_id": "create_table_from_file",
+      "input_links": {
+        "file": "read_file.file"
+      }
+    },
+    {
+      "module_type": "value.save",
+      "module_config": {
+        "value_type": "table"
+      },
+      "step_id": "save_table",
+      "input_links": {
+        "value_item": "create_table_from_file.table"
+      }
+    }
+  ],
+  "input_aliases": {
+    "read_file__path": "path",
+    "read_file__aliases": "file_aliases",
+    "save_table__aliases": "aliases"
+  },
+  "output_aliases": {
+    "create_table_from_file__table": "table",
+    "save_table__value_id": "value_id"
+  }
+}

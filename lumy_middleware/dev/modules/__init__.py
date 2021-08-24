@@ -1,8 +1,4 @@
-from . import data_selection  # noqa
-from . import data_upload  # noqa
-from . import two_args_math_fn  # noqa
-from .registry import get_module_processor
+from kiara import (KiaraEntryPointItem, find_kiara_modules_under)
 
-__all__ = [
-    'get_module_processor'
-]
+modules: KiaraEntryPointItem = (find_kiara_modules_under, [
+                                "lumy_middleware.dev.modules"])

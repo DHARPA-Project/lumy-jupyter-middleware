@@ -22,6 +22,7 @@ from kiara import Kiara
 from kiara.data.values import Value
 from kiara.defaults import SpecialValue
 from kiara.pipeline.controller import PipelineController
+from kiara.pipeline.pipeline import Pipeline
 from kiara.workflow.kiara_workflow import KiaraWorkflow
 
 if TYPE_CHECKING:
@@ -357,6 +358,10 @@ class KiaraAppContext(AppContext, PipelineController):
             if is_default_value_acceptable(pipeline_value)
         }
         self.pipeline_inputs = default_pipeline_inputs
+
+    def set_pipeline(self, pipeline: "Pipeline"):
+        # Not raising an error if pipeline is set again.
+        self._pipeline = pipeline
 
     def step_inputs_changed(self, event: "StepInputEvent"):
         '''
