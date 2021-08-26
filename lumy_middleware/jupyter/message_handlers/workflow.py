@@ -1,19 +1,23 @@
 import logging
-from typing import Dict, cast
+from pathlib import Path
+from typing import Dict, Optional, Union, cast
+import json
 
 from kiara.kiara import Kiara
 from lumy_middleware.context.kiara.page_components_code import \
     get_specific_components_code
 from lumy_middleware.jupyter.base import MessageHandler
 from lumy_middleware.types import MsgWorkflowUpdated
-from lumy_middleware.types.generated import (LumyWorkflow, MsgWorkflowExecute,
+from lumy_middleware.types.generated import (LumyWorkflow, Metadata,
+                                             MsgWorkflowExecute,
                                              MsgWorkflowExecutionResult)
 from lumy_middleware.types.generated import \
     MsgWorkflowExecutionResultStatus as Status
-from lumy_middleware.types.generated import (MsgWorkflowGetWorkflowList,
-                                             MsgWorkflowLoadLumyWorkflow,
-                                             MsgWorkflowPageComponentsCode,
-                                             MsgWorkflowWorkflowList)
+from lumy_middleware.types.generated import (
+    MsgWorkflowGetWorkflowList, MsgWorkflowLoadLumyWorkflow,
+    MsgWorkflowLumyWorkflowLoadProgress,
+    MsgWorkflowLumyWorkflowLoadProgressStatus, MsgWorkflowPageComponentsCode,
+    MsgWorkflowWorkflowList)
 from lumy_middleware.utils.dataclasses import from_dict
 from lumy_middleware.utils.lumy import get_workflows
 
@@ -27,8 +31,9 @@ class WorkflowMessageHandler(MessageHandler):
         Return current workflow.
         '''
         self.publisher.publish(MsgWorkflowUpdated(
-            None if self._context.current_workflow is None
-            else self._context.current_workflow
+            workflow=None if self._context.current_workflow is None
+            else self._context.current_workflow,
+            metadata=self._context.current_workflow_metadata
         ))
 
     def _handle_LoadLumyWorkflow(self, msg: MsgWorkflowLoadLumyWorkflow):
@@ -37,11 +42,35 @@ class WorkflowMessageHandler(MessageHandler):
             - install dependencies
             - set workflow as current
         '''
-        workflow = msg.workflow
-        if not isinstance(workflow, str):
-            workflow = from_dict(LumyWorkflow, cast(Dict, workflow))
-        for status_update in self.context.load_workflow(workflow):
+        workflow: Union[Path, LumyWorkflow]
+        if not isinstance(msg.workflow, str):
+            workflow = from_dict(LumyWorkflow, cast(Dict, msg.workflow))
+        else:
+            workflow = Path(msg.workflow)
+
+        metadata: Optional[Metadata] = None
+        if isinstance(msg.workflow, str):
+            metadata = Metadata(uri=msg.workflow)
+        else:
+            # find the workflow
+            workflows = list(get_workflows(include_body=True))
+            workflow_str = json.dumps(msg.workflow)
+            for w in workflows:
+                w_str = json.dumps(w.body)
+                if w_str == workflow_str:
+                    metadata = Metadata(uri=w.uri)
+                    break
+
+        last_status_update: Optional[MsgWorkflowLumyWorkflowLoadProgress] = \
+            None
+        for status_update in self.context.load_workflow(workflow, metadata):
+            last_status_update = status_update
             self.publisher.publish(status_update)
+
+        if last_status_update is not None and \
+                last_status_update.status == \
+                MsgWorkflowLumyWorkflowLoadProgressStatus.LOADED:
+            self._handle_GetCurrent()
 
     def _handle_GetWorkflowList(self, msg: MsgWorkflowGetWorkflowList):
         self.publisher.publish(MsgWorkflowWorkflowList(

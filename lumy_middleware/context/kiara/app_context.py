@@ -13,7 +13,8 @@ from lumy_middleware.context.kiara.data_transformation import (
 from lumy_middleware.context.kiara.dataregistry import KiaraDataRegistry
 from lumy_middleware.context.kiara.util.data import get_value_data
 from lumy_middleware.types.generated import (
-    DataTabularDataFilter, LumyWorkflow, MsgWorkflowLumyWorkflowLoadProgress,
+    DataTabularDataFilter, LumyWorkflow, Metadata,
+    MsgWorkflowLumyWorkflowLoadProgress,
     MsgWorkflowLumyWorkflowLoadProgressStatus, State, TypeEnum)
 from lumy_middleware.utils.lumy import load_lumy_workflow_from_file
 from lumy_middleware.utils.workflow import install_dependencies
@@ -84,8 +85,9 @@ def build_reverse_io_mappings(
 
 
 class KiaraAppContext(AppContext, PipelineController):
-    _workflow: Optional[LumyWorkflow]
-    _kiara_workflow: Optional[KiaraWorkflow]
+    _workflow: Optional[LumyWorkflow] = None
+    _workflow_metadata: Optional[Metadata] = None
+    _kiara_workflow: Optional[KiaraWorkflow] = None
     _data_registry: DataRegistry
     _kiara = Kiara.instance()
     # kiara workflow step Id -> mappings
@@ -95,7 +97,8 @@ class KiaraAppContext(AppContext, PipelineController):
 
     def load_workflow(
         self,
-        workflow_path_or_content: Union[Path, LumyWorkflow]
+        workflow_path_or_content: Union[Path, LumyWorkflow],
+        workflow_metadata: Optional[Metadata]
     ) -> Iterator[MsgWorkflowLumyWorkflowLoadProgress]:
         '''
         AppContext
@@ -186,6 +189,7 @@ class KiaraAppContext(AppContext, PipelineController):
                     pass
 
             self._workflow = workflow_path_or_content
+            self._workflow_metadata = workflow_metadata
             self._reverse_io_mappings = build_reverse_io_mappings(
                 self._workflow)
 
@@ -220,6 +224,10 @@ class KiaraAppContext(AppContext, PipelineController):
         AppContext
         '''
         return self._workflow
+
+    @property
+    def current_workflow_metadata(self) -> Optional[Metadata]:
+        return self._workflow_metadata
 
     def get_step_input_value(
         self,
