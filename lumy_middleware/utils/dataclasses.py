@@ -1,4 +1,6 @@
+import json
 from dataclasses import is_dataclass
+from enum import Enum
 from typing import IO, Any, Dict, Optional, Type, TypeVar, Union, cast
 
 import yaml
@@ -79,3 +81,10 @@ def from_dict(
     else:
         cls = data_class
     return cast(Any, cls).from_dict(data)
+
+
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Enum):
+            return o.value
+        return super().default(o)

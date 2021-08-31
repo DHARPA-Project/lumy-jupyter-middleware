@@ -1,7 +1,7 @@
+import json
 import logging
 from pathlib import Path
 from typing import Dict, Optional, Union, cast
-import json
 
 from kiara.kiara import Kiara
 from lumy_middleware.context.kiara.page_components_code import \
@@ -18,7 +18,8 @@ from lumy_middleware.types.generated import (
     MsgWorkflowLumyWorkflowLoadProgress,
     MsgWorkflowLumyWorkflowLoadProgressStatus, MsgWorkflowPageComponentsCode,
     MsgWorkflowWorkflowList)
-from lumy_middleware.utils.dataclasses import from_dict
+from lumy_middleware.utils.dataclasses import (EnhancedJSONEncoder, from_dict,
+                                               to_dict)
 from lumy_middleware.utils.lumy import get_workflows
 
 logger = logging.getLogger(__name__)
@@ -54,9 +55,9 @@ class WorkflowMessageHandler(MessageHandler):
         else:
             # find the workflow
             workflows = list(get_workflows(include_body=True))
-            workflow_str = json.dumps(msg.workflow)
+            workflow_str = json.dumps(to_dict(msg.workflow))
             for w in workflows:
-                w_str = json.dumps(w.body)
+                w_str = json.dumps(to_dict(w.body), cls=EnhancedJSONEncoder)
                 if w_str == workflow_str:
                     metadata = Metadata(uri=w.uri)
                     break
