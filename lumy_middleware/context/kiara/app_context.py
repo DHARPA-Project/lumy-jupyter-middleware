@@ -88,8 +88,8 @@ class KiaraAppContext(AppContext, PipelineController):
     _workflow: Optional[LumyWorkflow] = None
     _workflow_metadata: Optional[Metadata] = None
     _kiara_workflow: Optional[KiaraWorkflow] = None
-    _data_registry: DataRegistry
     _kiara = Kiara.instance()
+    _data_registry: DataRegistry = KiaraDataRegistry(_kiara)
     # kiara workflow step Id -> mappings
     _reverse_io_mappings: Dict[str, ReverseIoMappings]
     _is_running = False
@@ -173,9 +173,6 @@ class KiaraAppContext(AppContext, PipelineController):
                 type=TypeEnum.INFO,
                 message='Loaded workflow'
             )
-
-            self._data_registry = KiaraDataRegistry(self._kiara)
-            # self._data_registry = MockDataRegistry()
 
             # TODO: access the pipeline here because it is lazily created
             # in the getter. If not done, any code later accessing pipeline in
