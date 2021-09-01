@@ -3,6 +3,8 @@ from typing import Iterator, List
 
 from lumy_middleware.types import PackageDependency
 from pkg_resources import DistributionNotFound, require
+import importlib
+import stevedore
 
 
 def get_missing_dependencies(
@@ -27,8 +29,11 @@ def install_dependencies(
     are skipped.
     '''
     for dependency in get_missing_dependencies(dependencies):
+        # TODO: using extra index for the dharpa packages.
+        # This should be removed when we move to a public repository
         result = subprocess.run(
-            ['python', '-m', 'pip', 'install', dependency.name],
+            ['python', '-m', 'pip', 'install', '--extra-index-url',
+                'https://pypi.fury.io/dharpa/',  dependency.name],
             capture_output=True
         )
         if result.returncode != 0:
@@ -37,3 +42,6 @@ def install_dependencies(
             raise Exception(msg)
         else:
             yield dependency
+    # Needed to refresh plugin cache
+    # This is later used in `page_components_code.py`
+    importlib.reload(stevedore)
