@@ -107,7 +107,8 @@ class KiaraAppContext(AppContext, PipelineController):
             if self._is_loading_workflow:
                 msg = 'Another workflow is being loaded.'
                 yield MsgWorkflowLumyWorkflowLoadProgress(
-                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                    .NOT_LOADED,
                     type=TypeEnum.ERROR,
                     message=msg
                 )
@@ -157,7 +158,8 @@ class KiaraAppContext(AppContext, PipelineController):
                         )
             except Exception as e:
                 yield MsgWorkflowLumyWorkflowLoadProgress(
-                    status=MsgWorkflowLumyWorkflowLoadProgressStatus.LOADING,
+                    status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                    .NOT_LOADED,
                     type=TypeEnum.ERROR,
                     message=str(e)
                 )
@@ -212,6 +214,14 @@ class KiaraAppContext(AppContext, PipelineController):
                     type=TypeEnum.ERROR,
                     message='Could not execute steps on launch'
                 )
+        except Exception as e:
+            yield MsgWorkflowLumyWorkflowLoadProgress(
+                status=MsgWorkflowLumyWorkflowLoadProgressStatus
+                .NOT_LOADED,
+                type=TypeEnum.ERROR,
+                message='An error occurred'
+            )
+            raise e
         finally:
             self._is_loading_workflow = False
 
