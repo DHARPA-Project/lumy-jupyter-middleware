@@ -4,6 +4,7 @@ processing:
   dependencies:
     pythonPackages:
       - name: lumy-middleware>=0.3.8
+      - name: kiara-modules.language-processing==0.0.2
   data:
     transformations:
       - sourceType: network_graph
