@@ -6,7 +6,8 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from lumy_middleware.context.dataregistry import DataRegistry
 from lumy_middleware.types import State
 from lumy_middleware.types.generated import (
-    DataTabularDataFilter, LumyWorkflow, MsgWorkflowLumyWorkflowLoadProgress)
+    DataTabularDataFilter, LumyWorkflow, Metadata,
+    MsgWorkflowLumyWorkflowLoadProgress)
 from tinypubsub.simple import SimplePublisher
 
 
@@ -31,7 +32,8 @@ class AppContext(ABC):
     @abstractmethod
     def load_workflow(
         self,
-        workflow_path_or_content: Union[Path, LumyWorkflow]
+        workflow_path_or_content: Union[Path, LumyWorkflow],
+        workflow_metadata: Optional[Metadata]
     ) -> Iterator[MsgWorkflowLumyWorkflowLoadProgress]:
         '''
         Load workflow and set it as the current workflow.
@@ -51,6 +53,15 @@ class AppContext(ABC):
     def current_workflow(self) -> Optional[LumyWorkflow]:
         '''
         Returns current workflow structure or `None` if no
+        workflow has been loaded.
+        '''
+        ...
+
+    @property
+    @abstractmethod
+    def current_workflow_metadata(self) -> Optional[Metadata]:
+        '''
+        Returns current workflow metadata structure or `None` if no
         workflow has been loaded.
         '''
         ...

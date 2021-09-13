@@ -20,7 +20,7 @@ processing:
 ui:
   dependencies:
     pythonPackages:
-      - name: lumy-modules.network-analysis==0.1.0
+      - name: lumy-modules.network-analysis==0.1.1
   pages:
     - id: dataSelection
       component:

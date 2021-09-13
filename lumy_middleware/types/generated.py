@@ -771,6 +771,7 @@ class MsgWorkflowLumyWorkflowLoadProgressStatus(Enum):
     """Status of the process"""
     LOADED = "loaded"
     LOADING = "loading"
+    NOT_LOADED = "notLoaded"
 
 
 class TypeEnum(Enum):
@@ -813,12 +814,19 @@ class MsgWorkflowPageComponentsCode:
 
 
 @dataclass
+class Metadata:
+    """URI of the file the workflow was loaded from."""
+    uri: Optional[str] = None
+
+
+@dataclass
 class MsgWorkflowUpdated:
     """Target: "workflow"
     Message type: "Updated"
     
     Workflow currently loaded into the app.
     """
+    metadata: Optional[Metadata] = None
     workflow: Optional[LumyWorkflow] = None
 
 
