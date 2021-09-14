@@ -35,8 +35,15 @@ def reset_cache() -> None:
 
 
 def reset_kiara_cache(kiara_instance: Kiara) -> None:
-    # TODO: does not work. waiting for https://github.com/DHARPA-Project/kiara/issues/13 # noqa
-    # to be fixed.
+    '''
+    NOTE: Kiara does not provide an interface for refreshing
+    internal cache of modules and Kiara developers are not
+    planning to add this feature.
+
+    We are using internal API of Kiara which may change
+    in new versions of Kiara. Please review this
+    when Kiara version is changed.
+    '''
     kiara_instance._module_mgr = MergedModuleManager(
         Kiara.instance()._config.module_managers
     )
