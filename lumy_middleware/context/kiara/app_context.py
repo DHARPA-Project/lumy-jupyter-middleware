@@ -16,6 +16,7 @@ from lumy_middleware.types.generated import (
     DataTabularDataFilter, LumyWorkflow, Metadata,
     MsgWorkflowLumyWorkflowLoadProgress,
     MsgWorkflowLumyWorkflowLoadProgressStatus, State, TypeEnum)
+from lumy_middleware.utils.extensions import reset_cache, reset_kiara_cache
 from lumy_middleware.utils.lumy import load_lumy_workflow_from_file
 from lumy_middleware.utils.workflow import install_dependencies
 
@@ -165,6 +166,11 @@ class KiaraAppContext(AppContext, PipelineController):
                     message=str(e)
                 )
                 raise e
+            finally:
+                # Needed to refresh extensions cache after new libraries have
+                # been installed
+                reset_cache()
+                reset_kiara_cache(self._kiara)
 
             self._kiara_workflow = self._kiara.create_workflow(
                 kiara_workflow_name,

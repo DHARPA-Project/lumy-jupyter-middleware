@@ -3,9 +3,9 @@ from hashlib import blake2b
 from typing import List
 from urllib.parse import urlparse
 from urllib.request import urlopen
-import stevedore
 
 from lumy_middleware.types.generated import Code, LumyWorkflow
+from lumy_middleware.utils.extensions import get_plugin
 
 
 def content_hash(content: str) -> str:
@@ -25,16 +25,7 @@ def load_from_network(url: str) -> str:
 
 
 def load_from_python_plugin_package(plugin_name: str) -> str:
-    mgr = stevedore.ExtensionManager(
-        namespace="lumy.modules",
-        invoke_on_load=False,
-        propagate_map_exceptions=True
-    )
-
-    for module in mgr:
-        if module.name == plugin_name:
-            return module.plugin()
-    return ''
+    return get_plugin('lumy.modules', plugin_name) or ''
 
 
 def load_url(url: str) -> str:

@@ -3,8 +3,6 @@ from typing import Iterator, List
 
 from lumy_middleware.types import PackageDependency
 from pkg_resources import DistributionNotFound, require
-import importlib
-import stevedore
 
 
 def get_missing_dependencies(
@@ -42,6 +40,3 @@ def install_dependencies(
             raise Exception(msg)
         else:
             yield dependency
-    # Needed to refresh plugin cache
-    # This is later used in `page_components_code.py`
-    importlib.reload(stevedore)
