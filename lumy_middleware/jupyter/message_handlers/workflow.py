@@ -21,6 +21,7 @@ from lumy_middleware.types.generated import (
 from lumy_middleware.utils.dataclasses import (EnhancedJSONEncoder, from_dict,
                                                to_dict)
 from lumy_middleware.utils.lumy import get_workflows
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -100,14 +101,16 @@ class WorkflowMessageHandler(MessageHandler):
                 if msg.save:
                     for field, value \
                             in workflow.outputs.items():  # type: ignore
-                        value_type = value.type_obj
-                        save_config = value_type.save_config()
-
-                        # values without 'save_config' cannot be saved
-                        # https://github.com/DHARPA-Project/kiara/blob/4263687ebd1c0749a719fb489f004bce46935780/src/kiara/data/persistence.py#L83
-                        if save_config is not None:
-                            value_id = value.save()
-                            outputs_ids[field] = value_id
+                        try:
+                            meta = value.save(
+                                aliases=[msg.workflow_id or str(uuid4())]
+                            )
+                            outputs_ids[field] = meta.id
+                        except Exception:
+                            # TODO: Kiara does not provide a way to detect
+                            # whether the value can be saved.
+                            # Using internal API is unreliable.
+                            pass
 
                 response = MsgWorkflowExecutionResult(
                     request_id=msg.request_id,

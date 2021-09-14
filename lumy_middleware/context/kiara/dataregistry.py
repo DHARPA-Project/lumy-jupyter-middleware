@@ -15,21 +15,21 @@ FilterFn = Callable[[str, QueryOperator, Kiara], bool]
 
 def eq_fn(field: str):
     def fn(id: str, op: Eq, kiara: Kiara):
-        item = kiara.data_registry.get_value_item(id)
+        item = kiara.data_store.get_value_obj(id)
         return getattr(item, field) == op.value
     return fn
 
 
 def isin_fn(field: str):
     def fn(id: str, op: IsIn, kiara: Kiara):
-        item = kiara.data_registry.get_value_item(id)
+        item = kiara.data_store.get_value_obj(id)
         return getattr(item, field) in op.values
     return fn
 
 
 def substring_fn(field: str):
     def fn(id: str, op: Substring, kiara: Kiara):
-        item = kiara.data_registry.get_value_item(id)
+        item = kiara.data_store.get_value_obj(id)
         return op.term.lower() in getattr(item, field).lower()
     return fn
 
@@ -53,20 +53,18 @@ FiltersMap: Dict[str, Dict[Type[QueryOperator], FilterFn]] = {
 }
 
 
-def get_value_label(value: Value) -> str:
-    '''
-    TODO: This is a workaround to get value label which is not supported
-    by kiara at the moment. This will go away once there is a particular
-    metadata field for it.
-    '''
-    return value.get_metadata('value').get('value', {}).get('origin', value.id)
+def get_value_label(value: Value, kiara: Kiara) -> str:
+    aliases = kiara.data_store.find_aliases_for_value(value)
+    return aliases[0].alias if len(aliases) > 0 else value.id
 
 
-def as_item(id: str, kiara: Kiara) -> DataRegistryItem:
-    value = kiara.data_registry.get_value_item(id)
+def as_item(id: str, kiara: Kiara) -> Optional[DataRegistryItem]:
+    value = kiara.data_store.get_value_obj(id, raise_exception=False)
+    if value is None:
+        return None
     return DataRegistryItem(
         id=value.id,
-        label=get_value_label(value),
+        label=get_value_label(value, kiara),
         type=value.type_name,
         metadata=cast(Dict[str, Any], value.get_metadata())
     )
@@ -83,7 +81,11 @@ class KiaraBatch(Batch):
     def slice(self,
               start: Optional[int] = None,
               stop: Optional[int] = None) -> Iterable[DataRegistryItem]:
-        return map(lambda id: as_item(id, self._kiara), self._ids[start:stop])
+        items = map(lambda id: as_item(id, self._kiara), self._ids[start:stop])
+        return filter(
+            lambda v: v is not None,
+            cast(Iterable[DataRegistryItem], items)
+        )
 
     def __len__(self):
         return len(self._ids)
@@ -95,8 +97,8 @@ class KiaraDataRegistry(DataRegistry[Value]):
     def __init__(self, kiara: Kiara):
         self._kiara = kiara
 
-    def get_item_value(self, item_id: str) -> Value:
-        return self._kiara.data_registry.get_value_item(item_id)
+    def get_item_value(self, item_id: str) -> Optional[Value]:
+        return self._kiara.data_store.get_value_obj(item_id)
 
     def find(self, **kwargs) -> Batch:
         '''
@@ -106,7 +108,7 @@ class KiaraDataRegistry(DataRegistry[Value]):
         # ids = list(self._kiara.data_store.value_ids)
         # TODO: Not sure if we should use value_ids or aliases.values
         # kiara CLI uses aliases that excludes duplicates
-        ids = list(self._kiara.data_store.aliases.values())
+        ids = list(self._kiara.data_store.alias_names)
 
         for k, v in kwargs.items():
             filters = FiltersMap.get(k, None)

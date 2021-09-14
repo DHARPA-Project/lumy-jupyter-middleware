@@ -59,6 +59,8 @@ def get_value_data(
     filter: Optional[DataTabularDataFilter]
 ) -> Tuple[Any, Any]:
     filter_fn = FILTERS.get(value.type_name, None)
+    if not value.is_set:
+        return (None, filter)
 
     if filter_fn is None:
         return (value.get_value_data(), None)
