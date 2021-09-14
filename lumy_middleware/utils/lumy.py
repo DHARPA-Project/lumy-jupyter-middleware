@@ -5,7 +5,7 @@ from typing import Iterator
 from appdirs import user_data_dir
 from lumy_middleware.types import WorkflowListItem, LumyWorkflow
 from lumy_middleware.utils.dataclasses import from_dict, from_yaml
-from lumy_middleware import dev as dev_pkg
+from lumy_middleware import workflows as workflows_pkg
 
 APP_NAME = 'Lumy'
 
@@ -40,7 +40,7 @@ def get_user_workflows(
 def get_bundled_workflows(
     include_body: bool
 ) -> Iterator[WorkflowListItem]:
-    loc = Path(dev_pkg.__file__).parent / "resources"
+    loc = Path(workflows_pkg.__file__).parent / "resources"
     for filepath in loc.iterdir():
         if filepath.is_file():
             workflow = load_lumy_workflow_from_file(filepath)

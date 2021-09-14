@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DHARPA-Project/kiara/gh-pages/latest/development/entities/modules/PipelineConfig.json",
+  "module_type_name": "table_from_file",
+  "doc": "Create a table from a CSV file.",
+  "steps": [
+    {
+      "module_type": "lumy.table.local_file",
+      "step_id": "read_file"
+    },
+    {
+      "module_type": "lumy.table.create_from_file",
+      "step_id": "create_table_from_file",
+      "input_links": {
+        "file": "read_file.file"
+      }
+    },
+    {
+      "module_type": "value.save",
+      "module_config": {
+        "value_type": "table"
+      },
+      "step_id": "save_table",
+      "input_links": {
+        "value_item": "create_table_from_file.table"
+      }
+    }
+  ],
+  "input_aliases": {
+    "read_file__path": "path",
+    "read_file__aliases": "file_aliases",
+    "save_table__aliases": "aliases"
+  },
+  "output_aliases": {
+    "create_table_from_file__table": "table",
+    "save_table__value_id": "value_id"
+  }
+}

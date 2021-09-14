@@ -29,9 +29,8 @@ setup_args = dict(
         'stringcase>=1.2.0',
         'dataclasses-json>=0.5.2',
         'pyyaml',
-        'kiara[all]==0.0.4',
-        'kiara_modules.core==0.0.3',
-        'kiara_modules.network_analysis==0.0.2',
+        'kiara[all]==0.1.0',
+        'kiara_modules.core==0.1.0',
         'pandas>=1.2.4',
         'appdirs>=1.4.4',
         'stevedore>=3.3.0',
@@ -52,10 +51,10 @@ setup_args = dict(
     ],
     entry_points={
         'kiara.modules': [
-            'lumydev = lumy_middleware.dev:modules'
+            'lumy = lumy_middleware.kiara_modules:modules'
         ],
         'kiara.pipelines': [
-            'lumydev = lumy_middleware.dev:pipelines'
+            'lumy = lumy_middleware.kiara_modules.pipelines:pipelines'
         ]
     }
 )

@@ -1,21 +1,21 @@
 {
-  "$schema": "https://dharpa.org/kiara/development/entities/modules/PipelineModuleConfig.json",
-  "module_type_name": "networkAnalysisDevNew",
-  "doc": "Network analysis development workflow. Mostly used to experiment with the VRE",
+  "$schema": "https://raw.githubusercontent.com/DHARPA-Project/kiara/gh-pages/latest/development/entities/modules/PipelineConfig.json",
+  "module_type_name": "networkAnalysisDev",
+  "doc": "Network analysis development workflow. This is a development version that should be refactored: data selection and mapping modules should be removed.",
   "steps": [
     {
-      "module_type": "lumydev.data_selection.data_selection",
+      "module_type": "lumy.network_analysis_temporary.data_selection",
       "step_id": "data_selection"
     },
     {
-      "module_type": "lumydev.network_analysis.network_analysis_data_mapping",
+      "module_type": "lumy.network_analysis_temporary.data_mapping",
       "step_id": "data_mapping",
       "input_links": {
         "corpus": "data_selection.selectedItems"
       }
     },
     {
-      "module_type": "network.graphs.create_graph_from_edges_table",
+      "module_type": "network_graph.from_edges_table",
       "step_id": "create_graph",
       "input_links": {
         "edges_table": "data_mapping.edges"
@@ -29,7 +29,7 @@
       }
     },
     {
-      "module_type": "network.graphs.augment_network_graph",
+      "module_type": "network_graph.augment",
       "step_id": "augment_graph",
       "input_links": {
         "graph": "create_graph.graph",
@@ -42,17 +42,24 @@
       }
     },
     {
-      "module_type": "lumydev.network_analysis.add_centrality_calculations",
+      "module_type": "network_graph.add_centrality_calculations",
       "step_id": "centrality_measures",
       "input_links": {
         "graph": "augment_graph.graph"
       }
     },
     {
-      "module_type": "lumydev.network_analysis.graph_properties",
+      "module_type": "network_graph.properties",
       "step_id": "graph_properties",
       "input_links": {
         "graph": "centrality_measures.graph"
+      },
+      "module_config": {
+        "number_of_nodes": true,
+        "number_of_edges": true,
+        "density": true,
+        "degrees": true,
+        "shortest_path": true
       }
     }
   ],

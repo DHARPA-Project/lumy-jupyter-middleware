@@ -20,10 +20,11 @@ from lumy_middleware.utils.lumy import load_lumy_workflow_from_file
 from lumy_middleware.utils.workflow import install_dependencies
 
 from kiara import Kiara
-from kiara.data.values import PipelineValue
+from kiara.data.values import Value
 from kiara.defaults import SpecialValue
 from kiara.pipeline.controller import PipelineController
-from kiara.workflow import KiaraWorkflow
+from kiara.pipeline.pipeline import Pipeline
+from kiara.workflow.kiara_workflow import KiaraWorkflow
 
 if TYPE_CHECKING:
     from kiara.events import StepInputEvent, StepOutputEvent
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def is_default_value_acceptable(value: PipelineValue) -> bool:
+def is_default_value_acceptable(value: Value) -> bool:
     return value.value_schema.default is not None and \
         value.value_schema.default != SpecialValue.NOT_SET
 
@@ -357,7 +358,11 @@ class KiaraAppContext(AppContext, PipelineController):
         try:
             self.processing_state_changed.publish(State.BUSY)
             if step_id is not None:
-                self.process_step(step_id)
+                # only process step if all items are valid
+                # NOTE: This check is done in kiara, but it raises a generic
+                # exception if items are not valid.
+                if self.get_step_inputs(step_id).items_are_valid():
+                    self.process_step(step_id)
             else:
                 self._process_pipeline(self.processing_stages[0] or [])
         finally:
@@ -373,13 +378,18 @@ class KiaraAppContext(AppContext, PipelineController):
         }
         self.pipeline_inputs = default_pipeline_inputs
 
+    def set_pipeline(self, pipeline: "Pipeline"):
+        # Not raising an error if pipeline is set again.
+        self._pipeline = pipeline
+
     def step_inputs_changed(self, event: "StepInputEvent"):
         '''
         PipelineController
         '''
         page_id_to_input_ids: Dict[str, List[str]] = defaultdict(list)
 
-        for step_id, input_ids in event.updated_step_inputs.items():
+        items = list(event.updated_step_inputs.items())
+        for step_id, input_ids in items:
             self.run_processing(step_id)
             for input_id in input_ids:
                 for page_id, page_input_id in \

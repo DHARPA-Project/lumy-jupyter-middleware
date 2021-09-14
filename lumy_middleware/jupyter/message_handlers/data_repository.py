@@ -48,8 +48,6 @@ def as_table(items: List[DataRegistryItem]) -> pa.Table:
 
 class DataRepositoryHandler(MessageHandler):
     def _handle_FindItems(self, msg: MsgDataRepositoryFindItems):
-        self.context.data_registry
-
         if msg.filter.types is not None and len(msg.filter.types) > 0:
             batch = self.context.data_registry.find(
                 type=IsIn(msg.filter.types)
