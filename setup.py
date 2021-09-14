@@ -51,10 +51,10 @@ setup_args = dict(
     ],
     entry_points={
         'kiara.modules': [
-            'lumydev = lumy_middleware.dev.modules:modules'
+            'lumy = lumy_middleware.kiara_modules:modules'
         ],
         'kiara.pipelines': [
-            'lumydev = lumy_middleware.dev.pipelines:pipelines'
+            'lumy = lumy_middleware.kiara_modules.pipelines:pipelines'
         ]
     }
 )

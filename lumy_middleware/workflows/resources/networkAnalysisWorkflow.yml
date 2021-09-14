@@ -1,6 +1,6 @@
 processing:
   workflow:
-    name: lumydev.networkAnalysisDevNew
+    name: lumy.networkAnalysisDev
   dependencies:
     pythonPackages:
       - name: lumy-middleware>=0.3.8
@@ -11,12 +11,12 @@ processing:
         targetType: table
         view: nodes
         pipeline:
-          name: lumydev.graph_transformation.to_nodes_table
+          name: lumy.network_analysis.to_nodes_table
       - sourceType: network_graph
         targetType: table
         view: edges
         pipeline:
-          name: lumydev.graph_transformation.to_edges_table
+          name: lumy.network_analysis.to_edges_table
 ui:
   dependencies:
     pythonPackages:

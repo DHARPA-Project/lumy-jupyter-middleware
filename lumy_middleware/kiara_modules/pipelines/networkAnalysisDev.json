@@ -1,14 +1,14 @@
 {
-  "$schema": "https://dharpa.org/kiara/development/entities/modules/PipelineModuleConfig.json",
-  "module_type_name": "networkAnalysisDevNew",
-  "doc": "Network analysis development workflow. Mostly used to experiment with the VRE",
+  "$schema": "https://raw.githubusercontent.com/DHARPA-Project/kiara/gh-pages/latest/development/entities/modules/PipelineConfig.json",
+  "module_type_name": "networkAnalysisDev",
+  "doc": "Network analysis development workflow. This is a development version that should be refactored: data selection and mapping modules should be removed.",
   "steps": [
     {
-      "module_type": "lumydev.data_selection.data_selection",
+      "module_type": "lumy.network_analysis_temporary.data_selection",
       "step_id": "data_selection"
     },
     {
-      "module_type": "lumydev.network_analysis.network_analysis_data_mapping",
+      "module_type": "lumy.network_analysis_temporary.data_mapping",
       "step_id": "data_mapping",
       "input_links": {
         "corpus": "data_selection.selectedItems"

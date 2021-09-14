@@ -10,16 +10,16 @@ def generate_id() -> str:
     return str(uuid4())
 
 
-class MockNotesStore:
+class InMemoryNotesStore:
     __instance = None
     notes: Dict[str, List[Note]] = defaultdict(list)
 
     @staticmethod
     def get_instance():
-        if MockNotesStore.__instance is None:
-            MockNotesStore.__instance = MockNotesStore()
+        if InMemoryNotesStore.__instance is None:
+            InMemoryNotesStore.__instance = InMemoryNotesStore()
 
-        return MockNotesStore.__instance
+        return InMemoryNotesStore.__instance
 
     def get_notes(self, step_id: str) -> List[Note]:
         return self.notes[step_id]

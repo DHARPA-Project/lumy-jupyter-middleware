@@ -71,7 +71,6 @@ class OnboardFileModule(KiaraModule):
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
 
         path = inputs.get_value_data("path")
-        # aliases = inputs.get_value_data("aliases")
 
         file_model = FileMetadata.load_file(path)
         outputs.set_value("file", file_model)
