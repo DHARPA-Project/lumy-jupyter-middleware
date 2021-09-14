@@ -103,10 +103,11 @@ class WorkflowMessageHandler(MessageHandler):
                             in workflow.outputs.items():  # type: ignore
                         try:
                             meta = value.save(
-                                [msg.workflow_id or str(uuid4())])
+                                aliases=[msg.workflow_id or str(uuid4())]
+                            )
                             outputs_ids[field] = meta.id
                         except Exception:
-                            # Kiara does not provide a way to detect
+                            # TODO: Kiara does not provide a way to detect
                             # whether the value can be saved.
                             # Using internal API is unreliable.
                             pass
