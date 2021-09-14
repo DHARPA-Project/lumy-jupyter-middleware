@@ -4,7 +4,7 @@ processing:
   dependencies:
     pythonPackages:
       - name: lumy-middleware>=0.3.8
-      - name: kiara_modules.network_analysis>=0.0.13.dev4+gc9cb34f
+      - name: kiara_modules.network_analysis>=0.1.0
   data:
     transformations:
       - sourceType: network_graph

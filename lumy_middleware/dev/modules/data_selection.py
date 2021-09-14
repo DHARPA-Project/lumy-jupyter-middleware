@@ -43,20 +43,22 @@ class DataSelectionModule(KiaraModule):
             # registry = IpythonKernelController.get_instance() \
             #     ._context.data_registry
             # return registry.get_item_value(id)
-            return self._kiara.data_registry.get_value_item(id)
+            return self._kiara.data_store.get_value_obj(id)
 
         fields = ['id', 'label', 'type', 'columnNames', 'columnTypes']
         selected_items = [
             {
                 'id': id,
-                'label': get_value_label(get_value(id)),
+                'label': get_value_label(get_value(id), self._kiara),
                 'type': get_value(id).type_name,
                 'columnNames': get_value(id)
-                .get_metadata('table')['table']['column_names'],
+                .get_metadata('table').get('table', {})
+                .get('column_names', []),
                 'columnTypes': [
                     v['arrow_type_name']
                     for v in get_value(id)
-                    .get_metadata('table')['table']['schema'].values()
+                    .get_metadata('table').get('table', {}).get('schema', {})
+                    .values()
                 ]
             }
             for id in selected_items_ids

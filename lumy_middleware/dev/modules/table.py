@@ -2,9 +2,9 @@
 import typing
 
 from kiara import KiaraModule
+from kiara.module_config import ModuleTypeConfigSchema
 from kiara.data import ValueSet
-from kiara.data.values import ValueSchema, NonRegistryValue
-from kiara.module_config import ModuleTypeConfig
+from kiara.data.values import ValueSchema
 from pydantic import Field
 
 from kiara_modules.core.metadata_schemas import FileMetadata
@@ -65,38 +65,19 @@ class OnboardFileModule(KiaraModule):
                 "type": "file",
                 "doc": "A representation of the original file content in" +
                 " the kiara data registry.",
-            },
-            "dataset_id": {
-                "type": "string",
-                "doc": "The id of the dataset in the internal data store.",
-            },
+            }
         }
 
     def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
 
         path = inputs.get_value_data("path")
-        aliases = inputs.get_value_data("aliases")
+        # aliases = inputs.get_value_data("aliases")
 
         file_model = FileMetadata.load_file(path)
-
-        file_schema = ValueSchema(
-            type="file", optional=False, doc=f"Onboarded item from: {path}"
-        )
-
-        value = NonRegistryValue(  # type: ignore
-            _init_value=file_model,
-            value_schema=file_schema,
-            is_constant=True,
-            kiara=self._kiara,
-        )
-
-        dataset_md = self._kiara.data_store.save_value(
-            value=value, aliases=aliases)
-
-        outputs.set_values(file=file_model, dataset_id=dataset_md.value_id)
+        outputs.set_value("file", file_model)
 
 
-class CreateTableModuleConfig(ModuleTypeConfig):
+class CreateTableModuleConfig(ModuleTypeConfigSchema):
 
     allow_column_filter: bool = Field(
         description="Whether to add an input option to filter columns.",

@@ -109,7 +109,7 @@ class DataRegistry(Generic[VT], ABC):
         ...
 
     @abstractmethod
-    def get_item_value(self, item_id: str) -> VT:
+    def get_item_value(self, item_id: str) -> Optional[VT]:
         '''
         Return the value by ID.
         '''

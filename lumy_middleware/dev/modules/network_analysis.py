@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 from kiara import Kiara
 from kiara.data.values import ValueSchema
-from kiara.module import KiaraModule, ValueSet
+from kiara.module import KiaraModule, StepInputs, StepOutputs
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def get_value_data(id: str, kiara: Kiara):
     # registry = IpythonKernelController.get_instance() \
     #     ._context.data_registry
     # return registry.get_item_value(id)
-    return kiara.data_registry.get_value_item(id).get_value_data()
+    return kiara.data_store.get_value_data(id)
 
 
 def build_table_from_mapping(
@@ -105,7 +105,7 @@ class NetworkAnalysisDataMappingModule(KiaraModule):
             )
         }
 
-    def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
+    def process(self, inputs: StepInputs, outputs: StepOutputs) -> None:
         nodes_mapping_table = inputs.get_value_data(
             'nodesMappingTable') or pa.Table.from_pydict({})
         nodes = build_table_from_mapping(

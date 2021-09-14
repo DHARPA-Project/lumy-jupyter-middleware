@@ -358,7 +358,11 @@ class KiaraAppContext(AppContext, PipelineController):
         try:
             self.processing_state_changed.publish(State.BUSY)
             if step_id is not None:
-                self.process_step(step_id)
+                # only process step if all items are valid
+                # NOTE: This check is done in kiara, but it raises a generic
+                # exception if items are not valid.
+                if self.get_step_inputs(step_id).items_are_valid():
+                    self.process_step(step_id)
             else:
                 self._process_pipeline(self.processing_stages[0] or [])
         finally:
@@ -384,7 +388,8 @@ class KiaraAppContext(AppContext, PipelineController):
         '''
         page_id_to_input_ids: Dict[str, List[str]] = defaultdict(list)
 
-        for step_id, input_ids in event.updated_step_inputs.items():
+        items = list(event.updated_step_inputs.items())
+        for step_id, input_ids in items:
             self.run_processing(step_id)
             for input_id in input_ids:
                 for page_id, page_input_id in \

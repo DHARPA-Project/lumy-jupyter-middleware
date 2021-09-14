@@ -6,9 +6,7 @@ from uuid import uuid4
 import pandas as pd
 import pyarrow as pa
 from appdirs import user_data_dir
-from kiara import Kiara
 from kiara.data import Value
-from kiara.data.values import ValueSchema
 from lumy_middleware.context.dataregistry import (Batch, DataRegistry,
                                                   DataRegistryItem, Eq, IsIn,
                                                   QueryOperator, Substring)
@@ -110,12 +108,6 @@ class MockValue(Value):
                  data: Any,
                  metadata: Dict[str, Dict[str, Any]] = {}):
         self._data = data
-        super().__init__(
-            id=id,
-            value_schema=ValueSchema(type=type),
-            kiara=Kiara.instance(),
-            metadata=metadata
-        )
 
     def get_value_data(self) -> Any:
         return self._data

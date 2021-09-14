@@ -2,7 +2,8 @@ import logging
 from typing import Mapping
 
 from kiara import KiaraModule
-from kiara.data.values import ValueSchema, ValueSet
+from kiara.module import StepInputs, StepOutputs
+from kiara.data.values import ValueSchema
 from networkx import Graph, to_pandas_edgelist
 from pandas import DataFrame
 from pyarrow import Table
@@ -24,7 +25,7 @@ class GraphToNodesTableTransformationModule(KiaraModule):
             'target': ValueSchema(type='table')
         }
 
-    def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
+    def process(self, inputs: StepInputs, outputs: StepOutputs) -> None:
         graph: Graph = inputs.get_value_data('source')
         node_id_column: str = inputs.get_value_data('node_id_column')
 
@@ -50,7 +51,7 @@ class GraphToEdgesTableTransformationModule(KiaraModule):
             'target': ValueSchema(type='table')
         }
 
-    def process(self, inputs: ValueSet, outputs: ValueSet) -> None:
+    def process(self, inputs: StepInputs, outputs: StepOutputs) -> None:
         graph: Graph = inputs.get_value_data('source')
         df = to_pandas_edgelist(graph, "source", "target")
         table = Table.from_pandas(df)

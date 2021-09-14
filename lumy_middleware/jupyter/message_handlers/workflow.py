@@ -104,7 +104,7 @@ class WorkflowMessageHandler(MessageHandler):
                         try:
                             meta = value.save(
                                 [msg.workflow_id or str(uuid4())])
-                            outputs_ids[field] = meta.value_id
+                            outputs_ids[field] = meta.id
                         except Exception:
                             # Kiara does not provide a way to detect
                             # whether the value can be saved.
