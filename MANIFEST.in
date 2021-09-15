@@ -2,5 +2,5 @@ recursive-include tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
-recursive-include lumy_middleware/dev/resources *
-recursive-include lumy_middleware/dev/pipelines *
+recursive-include lumy_middleware/workflows/resources *
+recursive-include lumy_middleware/kiara_modules/pipelines *
