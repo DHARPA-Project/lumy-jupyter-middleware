@@ -2,7 +2,8 @@ import subprocess
 from typing import Iterator, List
 
 from lumy_middleware.types import PackageDependency
-from pkg_resources import DistributionNotFound, require
+from pkg_resources import (DistributionNotFound, ExtractionError, UnknownExtra,
+                           VersionConflict, require)
 
 
 def get_missing_dependencies(
@@ -14,7 +15,8 @@ def get_missing_dependencies(
     for dependency in dependencies:
         try:
             require(dependency.name)
-        except DistributionNotFound:
+        except (DistributionNotFound, VersionConflict,
+                UnknownExtra, ExtractionError):
             yield dependency
 
 
