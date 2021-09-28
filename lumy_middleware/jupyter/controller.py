@@ -1,180 +1,101 @@
-import json
 import logging
 import sys
-from enum import Enum
 from typing import Any, Dict, Optional
-from uuid import uuid4
 
 from ipykernel.comm import Comm
 from IPython import get_ipython
 from lumy_middleware.context.context import AppContext
 from lumy_middleware.context.kiara.app_context import KiaraAppContext
-from lumy_middleware.jupyter.base import (MessageEnvelope, MessageHandler,
-                                          Target, TargetPublisher)
-from lumy_middleware.jupyter.message_handlers import (ActivityHandler,
-                                                      DataRepositoryHandler,
-                                                      ModuleIOHandler,
-                                                      NotesHandler,
-                                                      WorkflowMessageHandler)
-from lumy_middleware.types.generated import MsgError
-from lumy_middleware.utils.dataclasses import to_dict
-from lumy_middleware.utils.json import object_as_json
+from lumy_middleware.controller_base import ControllerBase
+from lumy_middleware.jupyter.base import (
+    MessageEnvelope, MessageHandler, Target)
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger().setLevel(logging.DEBUG)
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
+class IpythonKernelController(ControllerBase):
+    '''
+    IPython Kernel Comm Manager based controller implementation.
 
-def preprocess_dict(d):
-    if d is None:
-        return d
+    This is the controller used by Lumy web app.
 
-    def val(v):
-        if isinstance(v, dict):
-            return preprocess_dict(v)
-        elif isinstance(v, list):
-            return [val(i) for i in v]
-        elif isinstance(v, Enum):
-            return v.value
-        else:
-            return v
+    **NOTE**:
 
-    return {
-        k: val(v)
-        for k, v in d.items()
-    }
+    The name and location of this class is used in Lumy web app
+    to refer to the controller at the very beginning when the application
+    is started. If it is changed, it should also be changed in
+    "jupyter-support" package in Lumy web app.
 
-
-class IpythonKernelController(TargetPublisher):
+    The web app uses the following methods of this class/instance:
+     - get_instance()
+     - is_ready()
+     - start()
+    '''
     __instance = None
 
     _comms: Dict[Target, Comm] = {}
-    _module_id: str
     _is_ready = False
 
     _context: AppContext
 
     _handlers: Dict[Target, MessageHandler] = {}
 
-    @staticmethod
+    @ staticmethod
     def start():
         if IpythonKernelController.get_instance() is None:
-            IpythonKernelController()
+            # Enable debug messages for Lumy web app
+            logging.basicConfig(level=logging.DEBUG, handlers=[
+                                logging.StreamHandler(sys.stdout)])
 
-    @staticmethod
+            IpythonKernelController.__instance = IpythonKernelController()
+
+    @ staticmethod
     def get_instance():
         return IpythonKernelController.__instance
 
-    def __init__(self):
-        super().__init__()
-        context = KiaraAppContext()
-        self._context = context
-
-        self._handlers = {
-            Target.Workflow: WorkflowMessageHandler(
-                self._context, self, Target.Workflow),
-            Target.ModuleIO: ModuleIOHandler(
-                self._context, self, Target.ModuleIO),
-            Target.Activity: ActivityHandler(
-                self._context, self, Target.Activity),
-            Target.DataRepository: DataRepositoryHandler(
-                self._context, self, Target.DataRepository),
-            Target.Notes: NotesHandler(
-                self._context, self, Target.Notes),
-        }
-
-        def _open_handle_factory(target: Target):
-            def _open_handle(comm: Comm, open_msg):
-                self._comms[target] = comm
-
-                def _recv(msg):
-                    response = self._handle_message(target, msg)
-                    if response is not None:
-                        data = preprocess_dict(to_dict(response))
-                        logger.debug(
-                            f'Sending response on {target.value} {data}')
-                        comm.send(data)
-
-                _recv(open_msg)
-                comm.on_msg(_recv)
-
-            return _open_handle
-
-        get_ipython().kernel.comm_manager.register_target(
-            Target.Activity.value,
-            _open_handle_factory(Target.Activity)
-        )
-
-        get_ipython().kernel.comm_manager.register_target(
-            Target.Workflow.value,
-            _open_handle_factory(Target.Workflow)
-        )
-
-        get_ipython().kernel.comm_manager.register_target(
-            Target.ModuleIO.value,
-            _open_handle_factory(Target.ModuleIO)
-        )
-
-        get_ipython().kernel.comm_manager.register_target(
-            Target.DataRepository.value,
-            _open_handle_factory(Target.DataRepository)
-        )
-
-        get_ipython().kernel.comm_manager.register_target(
-            Target.Notes.value,
-            _open_handle_factory(Target.Notes)
-        )
-
-        self._is_ready = True
-        IpythonKernelController.__instance = self
-
-    @property
+    @ property
     def is_ready(self):
         return self._is_ready
 
-    def publish_on_target(self, target: Target, msg: MessageEnvelope) -> None:
-        comm = self._comms[target]
-        ready_msg = preprocess_dict(to_dict(msg))
-        msg_str = json.dumps(ready_msg)
-        if len(msg_str) > 1000:
-            msg_str = msg_str[0:997] + '...'
-        logger.debug(
-            f'Message published on "{target}": {msg_str}')
-        comm.send(ready_msg)
+    def __init__(self, context: Optional[AppContext] = None):
+        if context is None:
+            context = KiaraAppContext()
+        super().__init__(context)
+        self._is_ready = True
 
-    def _handle_message(self, target: Target, message: Dict) -> Optional[Any]:
-        message_data: Dict = message.get('content', {}).get('data', {})
-        msg_str = json.dumps(message_data)
-        logger.debug(
-            f'Message received on "{target}": {msg_str}')
+    def as_transport_message(self, msg_envelope: Dict) -> Any:
+        # IPython kernel CommManager will do the job of
+        # creating a transport level message out of this message
+        return msg_envelope
 
-        if message_data.get('action', None) is None:
-            logger.warn(
-                f'Received a message with no "action" field on \
-                    target "{target}": {object_as_json(message)}'
-            )
+    def from_transport_message(self, msg: Any) -> Optional[MessageEnvelope]:
+        if msg is None:
             return None
+        content = msg.get('content', {}).get('data', {})
+        if content is None:
+            return None
+        if content.get('action') is None:
+            return None
+        return MessageEnvelope(**content)
 
-        try:
-            msg = MessageEnvelope(**message_data)
+    def publish_to_client(self, target: Target, transport_msg: Any) -> None:
+        if target not in self._comms:
+            logger.warning('Cannot publish to client. ' +
+                           f'No channel found for target "{target.value}".')
+            return None
+        self._comms[target].send(transport_msg)
 
-            handler = self._handlers[target]
+    def subscribe_to_client(self, target: Target):
+        def _open_handler(comm: Comm, open_msg: Any):
+            self._comms[target] = comm
 
-            if handler is None:
-                logger.warn(f'No handler found for target "{target}"')
-            else:
-                return handler(msg)
-        except Exception as e:
-            error_id = str(uuid4())
-            logger.exception(
-                f'''{error_id}: Error occured while executing a message
-                handler for target "{target}" and message
-                {json.dumps(message_data)}'''
-            )
-            self.publish(MsgError(
-                id=error_id,
-                message=f'Error occured while executing a message \
-                        handler for target "{target}": {str(e)}'
-            ))
-        return None
+            def _recv(transport_msg: Any):
+                self.handle_client_message(target, transport_msg)
+
+            _recv(open_msg)
+            comm.on_msg(_recv)
+
+        get_ipython().kernel.comm_manager.register_target(
+            target.value,
+            _open_handler
+        )
