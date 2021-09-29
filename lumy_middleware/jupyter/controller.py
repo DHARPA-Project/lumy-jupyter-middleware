@@ -33,8 +33,8 @@ class IpythonKernelController(ControllerBase):
     '''
     __instance = None
 
-    _comms: Dict[Target, Comm] = {}
-    _is_ready = False
+    _comms: Dict[Target, Comm]
+    _is_ready: bool
 
     _context: AppContext
 
@@ -60,6 +60,8 @@ class IpythonKernelController(ControllerBase):
     def __init__(self, context: Optional[AppContext] = None):
         if context is None:
             context = KiaraAppContext()
+        self._comms = {}
+        self._is_ready = False
         super().__init__(context)
         self._is_ready = True
 

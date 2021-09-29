@@ -55,12 +55,14 @@ class StandaloneController(ControllerBase):
     This controller is used in unit tests where we do not need
     to set up IPython transport.
     '''
-    _channels: Dict[Target, SimplePublisher] = {}
+    _channels: Dict[Target, SimplePublisher]
     _client: StandaloneControllerClient
 
     def __init__(self, context: Optional[AppContext] = None):
         if context is None:
             context = KiaraAppContext()
+        self._channels = {}
+
         super().__init__(context)
         self._client = StandaloneControllerClient(self)
 

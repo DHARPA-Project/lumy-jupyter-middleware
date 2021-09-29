@@ -5,7 +5,7 @@ from lumy_middleware.standalone.controller import (StandaloneController,
                                                    StandaloneControllerClient)
 
 
-class ControllerTestCase(unittest.TestCase):
+class ControllerTestCase(unittest.IsolatedAsyncioTestCase):
     controller: StandaloneController
 
     def setUp(self):
