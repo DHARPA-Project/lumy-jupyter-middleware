@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Iterator
 
@@ -19,7 +20,15 @@ def load_lumy_workflow_from_file(path: Path) -> LumyWorkflow:
 def get_workflow_dir() -> Path:
     '''
     Returns directory where workflow files are stored.
+
+    **NOTE** Workflow directory can be overridden via an
+    environmental variable. This is used for unit tests.
     '''
+    override_path = os.environ.get('LUMY_WORKFLOW_DIR')
+    if override_path is not None:
+        path = Path(override_path)
+        if path.is_dir():
+            return path
     return Path(user_data_dir(appname=APP_NAME)) / 'workflows'
 
 

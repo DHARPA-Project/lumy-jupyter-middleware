@@ -1,0 +1,11 @@
+processing:
+  workflow:
+    name: logic.xor
+  dependencies:
+    pythonPackages:
+ui:
+  dependencies:
+    pythonPackages:
+  pages:
+meta:
+  label: Xor Logic workflow

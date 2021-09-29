@@ -20,14 +20,14 @@ class TestExecuteWorkflow(ControllerTestCase):
             self.assertEqual(content.request_id, TEST_REQUEST_ID)
             self.assertEqual(content.status, Status.OK)
 
-        sub = self.client.subscribe(Target.Workflow, handler)
-        self.client.publish(
-            Target.Workflow,
-            MessageEnvelope(action='Execute',
-                            content=MsgWorkflowExecute(
-                                module_name='logic.and',
-                                request_id=TEST_REQUEST_ID,
-                                inputs={'a': True, 'b': True}
-                            ))
-        )
-        sub.unsubscribe()
+        with self.client.subscribe(Target.Workflow, handler):
+            self.client.publish(
+                Target.Workflow,
+                MessageEnvelope(
+                    action='Execute',
+                    content=MsgWorkflowExecute(
+                        module_name='logic.and',
+                        request_id=TEST_REQUEST_ID,
+                        inputs={'a': True, 'b': True}
+                    ))
+            )
