@@ -7,5 +7,31 @@ ui:
   dependencies:
     pythonPackages:
   pages:
+    - id: setA
+      component:
+        id: none
+        url: lumymodule://none
+      meta:
+        label: Set value of A
+      mapping:
+        inputs:
+          - pageIoId: a
+            workflowIoId: a
+            workflowStepId: or
+    - id: setBAndSeeY
+      component:
+        id: none
+        url: lumymodule://none
+      meta:
+        label: Set value of B and see the result
+      mapping:
+        inputs:
+          - pageIoId: b
+            workflowIoId: b
+            workflowStepId: or
+        outputs:
+          - pageIoId: 'y'
+            workflowIoId: 'y'
+            workflowStepId: and
 meta:
   label: Xor Logic workflow

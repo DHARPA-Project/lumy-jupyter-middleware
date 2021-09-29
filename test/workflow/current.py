@@ -49,7 +49,7 @@ class TestCurrentWorkflow(ControllerTestCase):
                 MessageEnvelope(action='GetCurrent')
             )
 
-        await response_received
+        await asyncio.wait_for(response_received, timeout=TIMEOUT)
 
     async def test_load_workflow(self):
         '''
