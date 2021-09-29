@@ -95,6 +95,7 @@ class WorkflowMessageHandler(MessageHandler):
                     msg.module_name, workflow_id=msg.workflow_id)
                 inputs = msg.inputs or {}
                 workflow.inputs.set_values(**inputs)
+                ovo = workflow.outputs.get_all_value_objects()
 
                 outputs_ids = {}
 

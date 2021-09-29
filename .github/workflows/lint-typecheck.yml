@@ -23,4 +23,6 @@ jobs:
     - name: Lint
       run: flake8 .
     - name: check types
-      run: mypy --cache-dir=/dev/null --no-incremental .
+      run: mypy --cache-dir=/dev/null --no-incremental lumy_middleware
+    - name: check types in tests
+      run: mypy --cache-dir=/dev/null --no-incremental test

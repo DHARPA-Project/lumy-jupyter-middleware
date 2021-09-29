@@ -8,7 +8,7 @@ from lumy_middleware.utils.dataclasses import from_dict
 
 class TestGetWorkflowList(ControllerTestCase):
 
-    def test_no_workflow_by_default(self):
+    def test_get_list_of_workflows(self):
         def handler(msg: MessageEnvelope):
             self.assertEqual(msg.action, 'WorkflowList')
 
