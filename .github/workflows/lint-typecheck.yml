@@ -20,7 +20,11 @@ jobs:
       run: pip install --extra-index-url https://pypi.fury.io/dharpa/ -e . 
     - name: Install mypy types
       run: pip install types-PyYAML types-setuptools
+    - name: run unittests
+      run: python -m unittest discover -s test -p "*.py"
     - name: Lint
       run: flake8 .
     - name: check types
-      run: mypy --cache-dir=/dev/null --no-incremental .
+      run: mypy --cache-dir=/dev/null --no-incremental lumy_middleware
+    - name: check types in tests
+      run: mypy --cache-dir=/dev/null --no-incremental test

@@ -80,7 +80,7 @@ class DataRepositoryHandler(MessageHandler):
             return MsgDataRepositoryItemValue(
                 item_id=msg.item_id,
                 type='table',
-                value=data,
+                value=serialize(data).value,
                 filter=msg.filter,
                 metadata=cast(Any, to_dict(TableStats(rows_count=len(table))))
             )
