@@ -26,26 +26,30 @@ class TestCurrentWorkflow(ControllerTestCase):
         super().tearDown()
         del os.environ['LUMY_WORKFLOW_DIR']
 
-    def test_aaaa_no_workflow_by_default(self):
+    async def test_aaaa_no_workflow_by_default(self):
         '''
         *TODO* 'aaaa' in the function name is to make it the first
         test to run before the workflow is loaded. Change this when
         a "unload current workflow" method is implemented and a workflow
         can be unloaded in "tearDown".
         '''
+        response_received = asyncio.get_event_loop().create_future()
+
         def handler(msg: MessageEnvelope):
             self.assertEqual(msg.action, 'Updated')
 
             content = from_dict(MsgWorkflowUpdated, msg.content)
             self.assertIsNone(content.workflow)
             self.assertIsNone(content.metadata)
+            response_received.set_result(True)
 
-        sub = self.client.subscribe(Target.Workflow, handler)
-        self.client.publish(
-            Target.Workflow,
-            MessageEnvelope(action='GetCurrent')
-        )
-        sub.unsubscribe()
+        with self.client.subscribe(Target.Workflow, handler):
+            self.client.publish(
+                Target.Workflow,
+                MessageEnvelope(action='GetCurrent')
+            )
+
+        await response_received
 
     async def test_load_workflow(self):
         '''
