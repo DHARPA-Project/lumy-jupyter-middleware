@@ -22,7 +22,5 @@ jobs:
       run: pip install types-PyYAML types-setuptools
     - name: Lint
       run: flake8 .
-    - name: check mypy version
-      run: mypy -V
     - name: check types
-      run: mypy -v --cache-dir=/dev/null --no-incremental .
+      run: mypy --cache-dir=/dev/null --no-incremental --exclude '/setup\.py$|/build/' .
