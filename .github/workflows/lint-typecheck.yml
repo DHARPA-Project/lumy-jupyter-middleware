@@ -23,4 +23,4 @@ jobs:
     - name: Lint
       run: flake8 .
     - name: check types
-      run: mypy --cache-dir=/dev/null --no-incremental --exclude '/setup\.py$|/build/' .
+      run: mypy --cache-dir=/dev/null --no-incremental .
