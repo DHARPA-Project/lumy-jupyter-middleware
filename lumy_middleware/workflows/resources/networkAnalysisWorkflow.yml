@@ -95,7 +95,7 @@ ui:
             workflowStepId: graph_properties
       layout:
         dataPreview:
-          - type: input
+          - type: output
             id: nodes
 meta:
   label: Network Analysis
